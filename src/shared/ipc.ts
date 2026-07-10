@@ -1,0 +1,77 @@
+// IPC channel names and payload types shared across main / preload / renderer.
+
+export const IPC = {
+  PtyCreate: 'pty:create',
+  PtyWrite: 'pty:write',
+  PtyResize: 'pty:resize',
+  PtyDispose: 'pty:dispose',
+  PtyData: 'pty:data',
+  PtyExit: 'pty:exit',
+  TabCwd: 'tab:cwd',
+  TabActivity: 'tab:activity',
+  GitOverview: 'git:overview',
+  GitCheckout: 'git:checkout',
+  GitCreateBranch: 'git:create-branch',
+  GitDiff: 'git:diff'
+} as const
+
+export interface PtyCreateRequest {
+  tabId: string
+  cwd?: string
+}
+
+export interface PtyDataEvent {
+  tabId: string
+  data: string
+}
+
+export interface PtyExitEvent {
+  tabId: string
+  exitCode: number
+}
+
+export interface TabCwdEvent {
+  tabId: string
+  cwd: string
+}
+
+/** Claude Code session activity, derived from hook events. */
+export type TabActivityState = 'permission' | 'idle'
+
+export interface TabActivityEvent {
+  tabId: string
+  state: TabActivityState
+  message: string
+}
+
+export interface GitOverview {
+  isRepo: boolean
+  currentBranch: string
+  branches: string[]
+  hasCommits: boolean
+}
+
+export type GitResult = { ok: true } | { ok: false; error: string }
+
+export type DiffLineType = 'add' | 'del' | 'context'
+
+export interface GitDiffLine {
+  type: DiffLineType
+  text: string
+  oldLine: number | null
+  newLine: number | null
+}
+
+export interface GitDiffHunk {
+  header: string
+  lines: GitDiffLine[]
+}
+
+export type DiffFileStatus = 'modified' | 'added' | 'deleted' | 'renamed'
+
+export interface GitDiffFile {
+  path: string
+  oldPath: string | null
+  status: DiffFileStatus
+  hunks: GitDiffHunk[]
+}

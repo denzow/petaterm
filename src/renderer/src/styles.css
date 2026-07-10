@@ -1,0 +1,424 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #1e1e2e;
+  --bg-alt: #181825;
+  --bg-hover: #313244;
+  --border: #45475a;
+  --text: #cdd6f4;
+  --text-dim: #7f849c;
+  --accent: #89b4fa;
+  --red: #f38ba8;
+  --green: #a6e3a1;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+}
+
+.app {
+  display: flex;
+  height: 100%;
+}
+
+/* ---------- sidebar ---------- */
+
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--bg-alt);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-tabs {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tab-item:hover {
+  background: var(--bg-hover);
+}
+
+.tab-item.active {
+  background: var(--bg-hover);
+  outline: 1px solid var(--accent);
+}
+
+.tab-badge {
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tab-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-cwd {
+  color: var(--text-dim);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-close {
+  visibility: hidden;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+}
+
+.tab-item:hover .tab-close {
+  visibility: visible;
+}
+
+.tab-close:hover {
+  color: var(--red);
+}
+
+.tab-rename-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 2px 4px;
+}
+
+.sidebar-footer {
+  padding: 6px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sidebar-button:hover {
+  background: var(--bg-hover);
+}
+
+.sidebar-button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---------- main / terminals ---------- */
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.terminals {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.terminal-container {
+  position: absolute;
+  inset: 0;
+  padding: 4px;
+}
+
+/* ---------- git panel ---------- */
+
+.git-panel {
+  width: 420px;
+  min-width: 420px;
+  background: var(--bg-alt);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+.git-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.git-panel-title {
+  font-weight: 600;
+}
+
+.git-panel-cwd {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-dim);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+.icon-button:hover {
+  color: var(--accent);
+}
+
+.git-panel-empty {
+  padding: 20px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.git-branch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 0;
+}
+
+.git-branch-row label {
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.git-branch-row select,
+.git-branch-row input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 5px 6px;
+}
+
+.git-branch-row button {
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.git-branch-row button:hover {
+  border-color: var(--accent);
+}
+
+.git-error {
+  margin: 8px 10px 0;
+  padding: 6px 8px;
+  background: rgba(243, 139, 168, 0.15);
+  border: 1px solid var(--red);
+  border-radius: 4px;
+  color: var(--red);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.git-diff-area {
+  flex: 1;
+  overflow: auto;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- diff viewer ---------- */
+
+.diff-viewer {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.diff-file {
+  margin-bottom: 12px;
+}
+
+.diff-file-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--bg-hover);
+  position: sticky;
+  top: 0;
+}
+
+.diff-status {
+  font-weight: 700;
+  width: 14px;
+  text-align: center;
+}
+
+.diff-status-added {
+  color: var(--green);
+}
+
+.diff-status-deleted {
+  color: var(--red);
+}
+
+.diff-status-modified,
+.diff-status-renamed {
+  color: var(--accent);
+}
+
+.diff-file-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diff-hunk-header {
+  padding: 3px 10px;
+  color: var(--accent);
+  background: rgba(137, 180, 250, 0.08);
+}
+
+.diff-line {
+  display: flex;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.diff-line:hover {
+  filter: brightness(1.35);
+}
+
+.diff-line-add {
+  background: rgba(166, 227, 161, 0.13);
+  color: var(--green);
+}
+
+.diff-line-del {
+  background: rgba(243, 139, 168, 0.13);
+  color: var(--red);
+}
+
+.diff-line-selected {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  background: rgba(137, 180, 250, 0.18);
+}
+
+.diff-line-num {
+  width: 36px;
+  min-width: 36px;
+  text-align: right;
+  padding-right: 6px;
+  color: var(--text-dim);
+  user-select: none;
+}
+
+.diff-line-text {
+  white-space: pre;
+  flex: 1;
+}
+
+.diff-comment-box {
+  margin: 6px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--bg);
+  padding: 8px;
+}
+
+.diff-comment-box textarea {
+  width: 100%;
+  min-height: 64px;
+  background: var(--bg);
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.diff-comment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.diff-comment-actions button {
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: system-ui, sans-serif;
+}
+
+.diff-comment-actions button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #11111b;
+  font-weight: 600;
+}
+
+.diff-comment-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
