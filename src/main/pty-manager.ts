@@ -1,5 +1,6 @@
 import * as pty from 'node-pty'
 import os from 'node:os'
+import fs from 'node:fs'
 import { WebContents } from 'electron'
 import { IPC, PtyDataEvent, PtyExitEvent } from '../shared/ipc'
 
@@ -19,11 +20,13 @@ export class PtyManager {
   create(tabId: string, cwd?: string): void {
     if (this.sessions.has(tabId)) return
     const shell = process.env.SHELL || '/bin/bash'
+    // A restored cwd may no longer exist — fall back to home rather than crash.
+    const startDir = cwd && this.isDir(cwd) ? cwd : os.homedir()
     const proc = pty.spawn(shell, [], {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,
-      cwd: cwd || os.homedir(),
+      cwd: startDir,
       env: {
         ...(process.env as Record<string, string>),
         TERM: 'xterm-256color',
@@ -45,6 +48,14 @@ export class PtyManager {
     })
 
     this.sessions.set(tabId, { tabId, proc })
+  }
+
+  private isDir(path: string): boolean {
+    try {
+      return fs.statSync(path).isDirectory()
+    } catch {
+      return false
+    }
   }
 
   write(tabId: string, data: string): void {

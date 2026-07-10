@@ -5,6 +5,7 @@ import { GitPanel } from './components/GitPanel'
 import { Settings } from './components/Settings'
 import { useTabsStore } from './stores/tabs'
 import { ShortcutAction, useKeybindingsStore } from './stores/keybindings'
+import { loadSession, saveSession } from './stores/session'
 
 export default function App(): React.JSX.Element {
   const tabs = useTabsStore((s) => s.tabs)
@@ -58,11 +59,32 @@ export default function App(): React.JSX.Element {
     const unsubExit = window.petaterm.onPtyExit(({ tabId }) => {
       useTabsStore.getState().removeTab(tabId)
     })
-    if (store.tabs.length === 0) store.addTab()
+
+    // Restore the previous session's tabs (their directories) on first launch,
+    // otherwise start with a single tab.
+    if (store.tabs.length === 0) {
+      const saved = loadSession()
+      if (saved && saved.tabs.length > 0) store.restoreTabs(saved.tabs, saved.activeIndex)
+      else store.addTab()
+    }
+
+    // Persist the open tabs' directories on every change so the latest state is
+    // always saved by the time the app quits.
+    const unsubPersist = useTabsStore.subscribe((state) => {
+      saveSession({
+        tabs: state.tabs.map((t) => ({ cwd: t.cwd, title: t.title })),
+        activeIndex: Math.max(
+          0,
+          state.tabs.findIndex((t) => t.id === state.activeTabId)
+        )
+      })
+    })
+
     return () => {
       unsubCwd()
       unsubActivity()
       unsubExit()
+      unsubPersist()
     }
   }, [])
 

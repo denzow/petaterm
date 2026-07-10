@@ -14,6 +14,7 @@ interface TabsState {
   tabs: Tab[]
   activeTabId: string | null
   addTab: () => void
+  restoreTabs: (saved: { cwd: string; title: string | null }[], activeIndex: number) => void
   removeTab: (tabId: string) => void
   activateTab: (tabId: string) => void
   activateRelative: (offset: number) => void
@@ -47,6 +48,18 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       tabs.splice(activeIndex === -1 ? tabs.length : activeIndex + 1, 0, tab)
       return { tabs, activeTabId: id }
     })
+  },
+
+  restoreTabs: (saved, activeIndex) => {
+    const tabs: Tab[] = saved.map((st) => ({
+      id: `tab-${Date.now().toString(36)}-${++tabCounter}`,
+      title: st.title,
+      cwd: st.cwd,
+      activity: null,
+      activityMessage: ''
+    }))
+    const active = tabs[activeIndex] ?? tabs[0] ?? null
+    set({ tabs, activeTabId: active?.id ?? null })
   },
 
   removeTab: (tabId) => {
