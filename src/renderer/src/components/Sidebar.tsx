@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { Tab, tabLabel, useTabsStore } from '../stores/tabs'
 
-export function Sidebar(): React.JSX.Element {
+interface SidebarProps {
+  onOpenSettings: () => void
+}
+
+export function Sidebar({ onOpenSettings }: SidebarProps): React.JSX.Element {
   const tabs = useTabsStore((s) => s.tabs)
   const activeTabId = useTabsStore((s) => s.activeTabId)
   const addTab = useTabsStore((s) => s.addTab)
@@ -14,8 +18,15 @@ export function Sidebar(): React.JSX.Element {
         ))}
       </div>
       <div className="sidebar-footer">
-        <button className="sidebar-button" onClick={addTab} title="新しいタブ (Ctrl+Shift+T)">
+        <button className="sidebar-button" onClick={addTab} title="新しいタブ">
           ＋ 新しいタブ
+        </button>
+        <button
+          className="sidebar-button"
+          onClick={onOpenSettings}
+          title="キーボードショートカット設定"
+        >
+          ⚙ ショートカット設定
         </button>
       </div>
     </div>

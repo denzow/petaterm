@@ -460,3 +460,109 @@ body {
   opacity: 0.5;
   cursor: default;
 }
+
+/* ---------- settings modal ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  width: 460px;
+  max-width: calc(100vw - 40px);
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 8px 14px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.keybind-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(69, 71, 90, 0.4);
+}
+
+.keybind-row:last-child {
+  border-bottom: none;
+}
+
+.keybind-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.keybind-combo {
+  min-width: 150px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: monospace;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.keybind-combo:hover {
+  border-color: var(--accent);
+}
+
+.keybind-combo.capturing {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(137, 180, 250, 0.12);
+}
+
+.keybind-combo.conflict {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.keybind-reset {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 15px;
+  padding: 2px 4px;
+}
+
+.keybind-reset:hover {
+  color: var(--accent);
+}
+
+.modal-footer {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.modal-hint {
+  color: var(--text-dim);
+  font-size: 12px;
+}

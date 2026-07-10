@@ -2,12 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { TerminalView } from './components/TerminalView'
 import { GitPanel } from './components/GitPanel'
+import { Settings } from './components/Settings'
 import { useTabsStore } from './stores/tabs'
+import { ShortcutAction, useKeybindingsStore } from './stores/keybindings'
 
 export default function App(): React.JSX.Element {
   const tabs = useTabsStore((s) => s.tabs)
   const activeTabId = useTabsStore((s) => s.activeTabId)
   const [gitPanelOpen, setGitPanelOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [gitInfo, setGitInfo] = useState<{ isRepo: boolean; branch: string }>({
     isRepo: false,
     branch: ''
@@ -63,31 +66,40 @@ export default function App(): React.JSX.Element {
     }
   }, [])
 
-  // App-wide keyboard shortcuts (also mirrored inside xterm's key handler).
+  // App-wide keyboard shortcuts, dispatched from the (customizable) keybindings
+  // store. Mirrored inside xterm's key handler so the shell doesn't swallow them.
   useEffect(() => {
-    const handler = (e: KeyboardEvent): void => {
-      if (!e.ctrlKey || !e.shiftKey) return
+    const runAction = (action: ShortcutAction): void => {
       const store = useTabsStore.getState()
-      if (e.key === 'T') {
-        e.preventDefault()
-        store.addTab()
-      } else if (e.key === 'W') {
-        e.preventDefault()
-        if (store.activeTabId) {
-          window.petaterm.ptyDispose(store.activeTabId)
-          store.removeTab(store.activeTabId)
-        }
-      } else if (e.key === 'G') {
-        e.preventDefault()
-        // The Git panel only exists under a repository.
-        if (isRepoRef.current) setGitPanelOpen((open) => !open)
-      } else if (e.key === 'PageUp') {
-        e.preventDefault()
-        store.activateRelative(-1)
-      } else if (e.key === 'PageDown') {
-        e.preventDefault()
-        store.activateRelative(1)
+      switch (action) {
+        case 'newTab':
+          store.addTab()
+          break
+        case 'closeTab':
+          if (store.activeTabId) {
+            window.petaterm.ptyDispose(store.activeTabId)
+            store.removeTab(store.activeTabId)
+          }
+          break
+        case 'toggleGitPanel':
+          // The Git panel only exists under a repository.
+          if (isRepoRef.current) setGitPanelOpen((open) => !open)
+          break
+        case 'prevTab':
+          store.activateRelative(-1)
+          break
+        case 'nextTab':
+          store.activateRelative(1)
+          break
       }
+    }
+    const handler = (e: KeyboardEvent): void => {
+      const kb = useKeybindingsStore.getState()
+      if (kb.capturing) return // don't fire actions while rebinding in settings
+      const action = kb.actionFor(e)
+      if (!action) return
+      e.preventDefault()
+      runAction(action)
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -95,7 +107,7 @@ export default function App(): React.JSX.Element {
 
   return (
     <div className="app">
-      <Sidebar />
+      <Sidebar onOpenSettings={() => setSettingsOpen(true)} />
       <div className="main">
         <div className="terminals">
           {tabs.map((tab) => (
@@ -116,6 +128,7 @@ export default function App(): React.JSX.Element {
           <GitPanel tab={activeTab} onClose={() => setGitPanelOpen(false)} />
         )}
       </div>
+      {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }

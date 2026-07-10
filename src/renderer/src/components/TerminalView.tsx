@@ -4,6 +4,7 @@ import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { Tab, useTabsStore } from '../stores/tabs'
+import { useKeybindingsStore } from '../stores/keybindings'
 
 interface TerminalViewProps {
   tab: Tab
@@ -42,14 +43,10 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
     termRef.current = term
     fitRef.current = fit
 
-    // Let app-level shortcuts win over the shell while the terminal is focused.
+    // Let app-level shortcuts win over the shell while the terminal is focused:
+    // any combo bound to an action is handed back to the window handler.
     term.attachCustomKeyEventHandler((e) => {
-      if (
-        e.type === 'keydown' &&
-        e.ctrlKey &&
-        e.shiftKey &&
-        ['T', 'W', 'G', 'PageUp', 'PageDown'].includes(e.key)
-      ) {
+      if (e.type === 'keydown' && useKeybindingsStore.getState().actionFor(e) !== null) {
         return false
       }
       return true
