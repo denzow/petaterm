@@ -62,7 +62,8 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
     const unsubExit = window.petaterm.onPtyExit(({ tabId, exitCode }) => {
       if (tabId === tab.id) term.write(`\r\n[プロセスが終了しました (code ${exitCode})]\r\n`)
     })
-    void window.petaterm.ptyCreate(tab.id).then(() => {
+    // Seed the shell in the cwd inherited from the spawning tab (empty → home).
+    void window.petaterm.ptyCreate(tab.id, tab.cwd || undefined).then(() => {
       window.petaterm.ptyResize(tab.id, term.cols, term.rows)
     })
 

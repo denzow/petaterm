@@ -37,8 +37,16 @@ export const useTabsStore = create<TabsState>((set, get) => ({
 
   addTab: () => {
     const id = `tab-${Date.now().toString(36)}-${++tabCounter}`
-    const tab: Tab = { id, title: null, cwd: '', activity: null, activityMessage: '' }
-    set((s) => ({ tabs: [...s.tabs, tab], activeTabId: id }))
+    set((s) => {
+      const activeIndex = s.tabs.findIndex((t) => t.id === s.activeTabId)
+      // New tabs inherit the cwd of the tab they're spawned from.
+      const inheritedCwd = activeIndex === -1 ? '' : s.tabs[activeIndex].cwd
+      const tab: Tab = { id, title: null, cwd: inheritedCwd, activity: null, activityMessage: '' }
+      const tabs = [...s.tabs]
+      // Insert right after the active tab (or at the end if there is none).
+      tabs.splice(activeIndex === -1 ? tabs.length : activeIndex + 1, 0, tab)
+      return { tabs, activeTabId: id }
+    })
   },
 
   removeTab: (tabId) => {
