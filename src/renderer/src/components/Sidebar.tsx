@@ -1,12 +1,7 @@
 import { useState } from 'react'
 import { Tab, tabLabel, useTabsStore } from '../stores/tabs'
 
-interface SidebarProps {
-  gitPanelOpen: boolean
-  onToggleGitPanel: () => void
-}
-
-export function Sidebar({ gitPanelOpen, onToggleGitPanel }: SidebarProps): React.JSX.Element {
+export function Sidebar(): React.JSX.Element {
   const tabs = useTabsStore((s) => s.tabs)
   const activeTabId = useTabsStore((s) => s.activeTabId)
   const addTab = useTabsStore((s) => s.addTab)
@@ -21,13 +16,6 @@ export function Sidebar({ gitPanelOpen, onToggleGitPanel }: SidebarProps): React
       <div className="sidebar-footer">
         <button className="sidebar-button" onClick={addTab} title="新しいタブ (Ctrl+Shift+T)">
           ＋ 新しいタブ
-        </button>
-        <button
-          className={`sidebar-button${gitPanelOpen ? ' active' : ''}`}
-          onClick={onToggleGitPanel}
-          title="Git パネル (Ctrl+Shift+G)"
-        >
-          Git パネル
         </button>
       </div>
     </div>

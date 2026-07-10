@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { TerminalView } from './components/TerminalView'
 import { GitPanel } from './components/GitPanel'
@@ -8,8 +8,40 @@ export default function App(): React.JSX.Element {
   const tabs = useTabsStore((s) => s.tabs)
   const activeTabId = useTabsStore((s) => s.activeTabId)
   const [gitPanelOpen, setGitPanelOpen] = useState(false)
+  const [gitInfo, setGitInfo] = useState<{ isRepo: boolean; branch: string }>({
+    isRepo: false,
+    branch: ''
+  })
 
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null
+  const activeCwd = activeTab?.cwd ?? ''
+
+  // Keep the latest isRepo readable from the once-registered key handler.
+  const isRepoRef = useRef(false)
+  isRepoRef.current = gitInfo.isRepo
+
+  // Detect whether the active tab's cwd is a git repo (and which branch), so
+  // the right-edge Git handle only appears under a repository. Re-checked when
+  // the cwd changes and whenever the panel closes (to pick up branch changes).
+  useEffect(() => {
+    let cancelled = false
+    if (!activeCwd) {
+      setGitInfo({ isRepo: false, branch: '' })
+      return
+    }
+    void window.petaterm.gitOverview(activeCwd).then((ov) => {
+      if (cancelled) return
+      setGitInfo({ isRepo: ov.isRepo, branch: ov.currentBranch })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [activeCwd, gitPanelOpen])
+
+  // Never leave the panel open once the active tab is no longer a repo.
+  useEffect(() => {
+    if (!gitInfo.isRepo) setGitPanelOpen(false)
+  }, [gitInfo.isRepo])
 
   // Global IPC listeners (registered once).
   useEffect(() => {
@@ -47,7 +79,8 @@ export default function App(): React.JSX.Element {
         }
       } else if (e.key === 'G') {
         e.preventDefault()
-        setGitPanelOpen((open) => !open)
+        // The Git panel only exists under a repository.
+        if (isRepoRef.current) setGitPanelOpen((open) => !open)
       } else if (e.key === 'PageUp') {
         e.preventDefault()
         store.activateRelative(-1)
@@ -62,13 +95,23 @@ export default function App(): React.JSX.Element {
 
   return (
     <div className="app">
-      <Sidebar gitPanelOpen={gitPanelOpen} onToggleGitPanel={() => setGitPanelOpen((o) => !o)} />
+      <Sidebar />
       <div className="main">
         <div className="terminals">
           {tabs.map((tab) => (
             <TerminalView key={tab.id} tab={tab} active={tab.id === activeTabId} />
           ))}
         </div>
+        {gitInfo.isRepo && !gitPanelOpen && (
+          <button
+            className="git-handle"
+            onClick={() => setGitPanelOpen(true)}
+            title="Git パネルを開く (Ctrl+Shift+G)"
+          >
+            <span className="git-handle-icon">⎇</span>
+            <span className="git-handle-text">{gitInfo.branch || 'Git'}</span>
+          </button>
+        )}
         {gitPanelOpen && activeTab && (
           <GitPanel tab={activeTab} onClose={() => setGitPanelOpen(false)} />
         )}
