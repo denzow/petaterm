@@ -43,10 +43,18 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
     // Let app-level shortcuts win over the shell while the terminal is focused:
     // any combo bound to an action is handed back to the window handler.
     term.attachCustomKeyEventHandler((e) => {
-      if (e.type === 'keydown' && useKeybindingsStore.getState().actionFor(e) !== null) {
-        return false
+      if (e.type !== 'keydown') return true
+      const action = useKeybindingsStore.getState().actionFor(e)
+      if (!action) return true
+      // Panel switching only applies under a repo; otherwise let the shell
+      // handle the key (e.g. Ctrl+←/→ word movement).
+      if (
+        (action === 'panelLeft' || action === 'panelRight') &&
+        !useTabsStore.getState().activeRepo
+      ) {
+        return true
       }
-      return true
+      return false
     })
 
     // Subscribe before creating the pty so the first prompt is never dropped.

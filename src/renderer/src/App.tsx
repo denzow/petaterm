@@ -42,9 +42,12 @@ export default function App(): React.JSX.Element {
     }
   }, [activeCwd, gitPanelOpen])
 
-  // Never leave the panel open once the active tab is no longer a repo.
+  // Never leave the panel open once the active tab is no longer a repo, and
+  // mirror repo-ness into the store so the terminal key handler can let panel
+  // switch keys (Ctrl+←/→) pass through to the shell when no Git panel exists.
   useEffect(() => {
     if (!gitInfo.isRepo) setGitPanelOpen(false)
+    useTabsStore.getState().setActiveRepo(gitInfo.isRepo)
   }, [gitInfo.isRepo])
 
   // Global IPC listeners (registered once).
@@ -103,9 +106,13 @@ export default function App(): React.JSX.Element {
             store.removeTab(store.activeTabId)
           }
           break
-        case 'toggleGitPanel':
-          // The Git panel only exists under a repository.
-          if (isRepoRef.current) setGitPanelOpen((open) => !open)
+        case 'panelLeft':
+          // Left panel = terminal.
+          setGitPanelOpen(false)
+          break
+        case 'panelRight':
+          // Right panel = Git (only exists under a repository).
+          setGitPanelOpen(true)
           break
         case 'prevTab':
           store.activateRelative(-1)
@@ -120,6 +127,9 @@ export default function App(): React.JSX.Element {
       if (kb.capturing) return // don't fire actions while rebinding in settings
       const action = kb.actionFor(e)
       if (!action) return
+      // Panel switching only applies under a repo; otherwise let the key reach
+      // the shell (e.g. Ctrl+←/→ word movement).
+      if ((action === 'panelLeft' || action === 'panelRight') && !isRepoRef.current) return
       e.preventDefault()
       runAction(action)
     }
@@ -131,20 +141,21 @@ export default function App(): React.JSX.Element {
     <div className="app">
       <Sidebar onOpenSettings={() => setSettingsOpen(true)} />
       <div className="main">
-        {/* When the active tab is a git repo, a top tab bar switches the main
-            area between the terminal and the Git view. */}
+        {/* When the active tab is a git repo, a top bar switches the main area
+            between the terminal and Git panels. */}
         {gitInfo.isRepo && (
           <div className="view-tabs">
             <button
               className={`view-tab${!gitPanelOpen ? ' active' : ''}`}
               onClick={() => setGitPanelOpen(false)}
+              title="terminal パネル (Ctrl+←)"
             >
               terminal
             </button>
             <button
               className={`view-tab${gitPanelOpen ? ' active' : ''}`}
               onClick={() => setGitPanelOpen(true)}
-              title="Git (Ctrl+Shift+G)"
+              title="Git パネル (Ctrl+→)"
             >
               <span className="view-tab-icon">⎇</span>
               {gitInfo.branch || 'Git'}

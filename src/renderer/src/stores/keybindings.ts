@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ShortcutAction = 'newTab' | 'closeTab' | 'toggleGitPanel' | 'prevTab' | 'nextTab'
+export type ShortcutAction = 'newTab' | 'closeTab' | 'panelLeft' | 'panelRight' | 'prevTab' | 'nextTab'
 
 export interface KeyBinding {
   ctrl: boolean
@@ -14,20 +14,29 @@ export interface KeyBinding {
 export const ACTION_LABELS: Record<ShortcutAction, string> = {
   newTab: '新しいセッションタブ',
   closeTab: 'セッションタブを閉じる',
-  toggleGitPanel: 'terminal / Git タブ切り替え',
+  panelLeft: '左のパネル (terminal)',
+  panelRight: '右のパネル (Git)',
   prevTab: '前のセッションタブ',
   nextTab: '次のセッションタブ'
 }
 
 /** Action order as shown in the settings UI. */
-export const ACTIONS: ShortcutAction[] = ['newTab', 'closeTab', 'toggleGitPanel', 'prevTab', 'nextTab']
+export const ACTIONS: ShortcutAction[] = [
+  'newTab',
+  'closeTab',
+  'panelLeft',
+  'panelRight',
+  'prevTab',
+  'nextTab'
+]
 
 const DEFAULT_BINDINGS: Record<ShortcutAction, KeyBinding> = {
   newTab: { ctrl: true, shift: true, alt: false, meta: false, key: 'T' },
   closeTab: { ctrl: true, shift: true, alt: false, meta: false, key: 'W' },
-  toggleGitPanel: { ctrl: true, shift: true, alt: false, meta: false, key: 'G' },
-  prevTab: { ctrl: true, shift: true, alt: false, meta: false, key: 'PageUp' },
-  nextTab: { ctrl: true, shift: true, alt: false, meta: false, key: 'PageDown' }
+  panelLeft: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowLeft' },
+  panelRight: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowRight' },
+  prevTab: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowUp' },
+  nextTab: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowDown' }
 }
 
 const STORAGE_KEY = 'petaterm.keybindings'
@@ -46,13 +55,20 @@ export function matchBinding(e: KeyboardEvent, b: KeyBinding): boolean {
   )
 }
 
+const KEY_SYMBOLS: Record<string, string> = {
+  ArrowLeft: '←',
+  ArrowRight: '→',
+  ArrowUp: '↑',
+  ArrowDown: '↓'
+}
+
 export function formatBinding(b: KeyBinding): string {
   const parts: string[] = []
   if (b.ctrl) parts.push('Ctrl')
   if (b.shift) parts.push('Shift')
   if (b.alt) parts.push('Alt')
   if (b.meta) parts.push('Meta')
-  parts.push(b.key)
+  parts.push(KEY_SYMBOLS[b.key] ?? b.key)
   return parts.join('+')
 }
 
