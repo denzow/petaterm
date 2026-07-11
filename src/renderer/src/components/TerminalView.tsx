@@ -42,10 +42,25 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
 
     // Let app-level shortcuts win over the shell while the terminal is focused:
     // any combo bound to an action is handed back to the window handler.
+    // copy/paste need this terminal instance, so they are handled right here.
     term.attachCustomKeyEventHandler((e) => {
       if (e.type !== 'keydown') return true
       const action = useKeybindingsStore.getState().actionFor(e)
       if (!action) return true
+      if (action === 'copy') {
+        const selection = term.getSelection()
+        if (selection) void navigator.clipboard.writeText(selection)
+        e.preventDefault()
+        return false
+      }
+      if (action === 'paste') {
+        void navigator.clipboard.readText().then((text) => {
+          if (text) term.paste(text)
+        })
+        // Suppress the browser's own paste so the text isn't inserted twice.
+        e.preventDefault()
+        return false
+      }
       // Panel switching only applies under a repo; otherwise let the shell
       // handle the key (e.g. Ctrl+←/→ word movement).
       if (

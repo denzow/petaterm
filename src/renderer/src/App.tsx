@@ -135,6 +135,9 @@ export default function App(): React.JSX.Element {
       if (kb.capturing) return // don't fire actions while rebinding in settings
       const action = kb.actionFor(e)
       if (!action) return
+      // copy/paste are handled inside the focused TerminalView (they need the
+      // xterm instance); elsewhere the native clipboard behavior should win.
+      if (action === 'copy' || action === 'paste') return
       // Panel switching only applies under a repo; otherwise let the key reach
       // the shell (e.g. Ctrl+←/→ word movement).
       if ((action === 'panelLeft' || action === 'panelRight') && !isRepoRef.current) return

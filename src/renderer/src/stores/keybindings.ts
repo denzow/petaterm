@@ -1,6 +1,14 @@
 import { create } from 'zustand'
 
-export type ShortcutAction = 'newTab' | 'closeTab' | 'panelLeft' | 'panelRight' | 'prevTab' | 'nextTab'
+export type ShortcutAction =
+  | 'newTab'
+  | 'closeTab'
+  | 'panelLeft'
+  | 'panelRight'
+  | 'prevTab'
+  | 'nextTab'
+  | 'copy'
+  | 'paste'
 
 export interface KeyBinding {
   ctrl: boolean
@@ -14,10 +22,12 @@ export interface KeyBinding {
 export const ACTION_LABELS: Record<ShortcutAction, string> = {
   newTab: '新しいセッションタブ',
   closeTab: 'セッションタブを閉じる',
-  panelLeft: '左のパネル (terminal)',
-  panelRight: '右のパネル (Git)',
+  panelLeft: '左のパネルへ',
+  panelRight: '右のパネルへ',
   prevTab: '前のセッションタブ',
-  nextTab: '次のセッションタブ'
+  nextTab: '次のセッションタブ',
+  copy: 'コピー (ターミナル)',
+  paste: '貼り付け (ターミナル)'
 }
 
 /** Action order as shown in the settings UI. */
@@ -27,7 +37,9 @@ export const ACTIONS: ShortcutAction[] = [
   'panelLeft',
   'panelRight',
   'prevTab',
-  'nextTab'
+  'nextTab',
+  'copy',
+  'paste'
 ]
 
 const DEFAULT_BINDINGS: Record<ShortcutAction, KeyBinding> = {
@@ -36,7 +48,9 @@ const DEFAULT_BINDINGS: Record<ShortcutAction, KeyBinding> = {
   panelLeft: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowLeft' },
   panelRight: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowRight' },
   prevTab: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowUp' },
-  nextTab: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowDown' }
+  nextTab: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowDown' },
+  copy: { ctrl: true, shift: true, alt: false, meta: false, key: 'C' },
+  paste: { ctrl: true, shift: true, alt: false, meta: false, key: 'V' }
 }
 
 const STORAGE_KEY = 'petaterm.keybindings'
