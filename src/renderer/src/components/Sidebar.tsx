@@ -21,12 +21,8 @@ export function Sidebar({ onOpenSettings }: SidebarProps): React.JSX.Element {
         <button className="sidebar-button" onClick={addTab} title="新しいタブ">
           ＋ 新しいタブ
         </button>
-        <button
-          className="sidebar-button"
-          onClick={onOpenSettings}
-          title="キーボードショートカット設定"
-        >
-          ⚙ ショートカット設定
+        <button className="sidebar-button" onClick={onOpenSettings} title="設定">
+          ⚙ 設定
         </button>
       </div>
     </div>

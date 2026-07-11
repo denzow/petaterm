@@ -574,3 +574,142 @@ body {
   color: var(--text-dim);
   font-size: 12px;
 }
+
+/* ---------- settings: two-pane layout ---------- */
+
+.settings-modal {
+  width: 640px;
+}
+
+.settings-body {
+  display: flex;
+  min-height: 340px;
+  max-height: 66vh;
+}
+
+.settings-nav {
+  width: 150px;
+  min-width: 150px;
+  border-right: 1px solid var(--border);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-nav-item {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text);
+  text-align: left;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.settings-nav-item:hover {
+  background: var(--bg-hover);
+}
+
+.settings-nav-item.active {
+  background: var(--bg-hover);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.settings-content {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  overflow-y: auto;
+}
+
+.settings-hint {
+  margin-top: 12px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+/* ---------- appearance settings ---------- */
+
+.setting-group {
+  margin-bottom: 18px;
+}
+
+.setting-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.setting-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 6px 8px;
+}
+
+.setting-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.theme-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.theme-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.theme-swatches {
+  display: flex;
+  gap: 5px;
+}
+
+.theme-swatches span {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.theme-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.font-size-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.font-size-row input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.font-size-input {
+  width: 64px;
+}
+
+.font-size-unit {
+  color: var(--text-dim);
+  font-size: 12px;
+}

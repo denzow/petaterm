@@ -5,6 +5,7 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { Tab, useTabsStore } from '../stores/tabs'
 import { useKeybindingsStore } from '../stores/keybindings'
+import { resolveFontFamily, useAppearanceStore } from '../stores/appearance'
 
 interface TerminalViewProps {
   tab: Tab
@@ -18,18 +19,14 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
 
   useEffect(() => {
     const container = containerRef.current!
+    const appearance = useAppearanceStore.getState()
     const term = new Terminal({
-      fontFamily: 'monospace',
-      fontSize: 14,
+      fontFamily: resolveFontFamily(appearance.fontFamily),
+      fontSize: appearance.fontSize,
       scrollback: 10000,
       cursorBlink: true,
       allowProposedApi: true,
-      theme: {
-        background: '#1e1e2e',
-        foreground: '#cdd6f4',
-        cursor: '#f5e0dc',
-        selectionBackground: '#585b70'
-      }
+      theme: appearance.currentTheme().terminal
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
@@ -78,10 +75,22 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
     })
     resizeObserver.observe(container)
 
+    // Apply live theme / font changes to this terminal.
+    const unsubAppearance = useAppearanceStore.subscribe((s) => {
+      term.options.theme = s.currentTheme().terminal
+      term.options.fontFamily = resolveFontFamily(s.fontFamily)
+      term.options.fontSize = s.fontSize
+      if (container.clientWidth > 0 && container.clientHeight > 0) {
+        fit.fit()
+        window.petaterm.ptyResize(tab.id, term.cols, term.rows)
+      }
+    })
+
     return () => {
       resizeObserver.disconnect()
       unsubData()
       unsubExit()
+      unsubAppearance()
       window.petaterm.ptyDispose(tab.id)
       term.dispose()
     }
