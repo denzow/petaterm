@@ -29,7 +29,7 @@ let tabCounter = 0
 export function tabLabel(tab: Tab): string {
   if (tab.title) return tab.title
   if (tab.cwd) return tab.cwd.split('/').filter(Boolean).pop() ?? '/'
-  return 'ターミナル'
+  return 'terminal'
 }
 
 export const useTabsStore = create<TabsState>((set, get) => ({

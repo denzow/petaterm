@@ -12,11 +12,11 @@ export interface KeyBinding {
 }
 
 export const ACTION_LABELS: Record<ShortcutAction, string> = {
-  newTab: '新しいタブ',
-  closeTab: 'タブを閉じる',
-  toggleGitPanel: 'Git パネルの開閉',
-  prevTab: '前のタブ',
-  nextTab: '次のタブ'
+  newTab: '新しいセッションタブ',
+  closeTab: 'セッションタブを閉じる',
+  toggleGitPanel: 'terminal / Git タブ切り替え',
+  prevTab: '前のセッションタブ',
+  nextTab: '次のセッションタブ'
 }
 
 /** Action order as shown in the settings UI. */

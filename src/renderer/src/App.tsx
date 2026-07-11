@@ -139,7 +139,7 @@ export default function App(): React.JSX.Element {
               className={`view-tab${!gitPanelOpen ? ' active' : ''}`}
               onClick={() => setGitPanelOpen(false)}
             >
-              ターミナル
+              terminal
             </button>
             <button
               className={`view-tab${gitPanelOpen ? ' active' : ''}`}

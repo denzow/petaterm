@@ -18,8 +18,8 @@ export function Sidebar({ onOpenSettings }: SidebarProps): React.JSX.Element {
         ))}
       </div>
       <div className="sidebar-footer">
-        <button className="sidebar-button" onClick={addTab} title="新しいタブ">
-          ＋ 新しいタブ
+        <button className="sidebar-button" onClick={addTab} title="新しいセッションタブ">
+          ＋ 新しいセッションタブ
         </button>
         <button className="sidebar-button" onClick={onOpenSettings} title="設定">
           ⚙ 設定
@@ -75,7 +75,7 @@ function TabItem({ tab, active }: { tab: Tab; active: boolean }): React.JSX.Elem
       )}
       <button
         className="tab-close"
-        title="タブを閉じる"
+        title="セッションタブを閉じる"
         onClick={(e) => {
           e.stopPropagation()
           window.petaterm.ptyDispose(tab.id)
