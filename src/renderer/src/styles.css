@@ -191,6 +191,15 @@ body {
   color: var(--accent);
 }
 
+/* Shown in the same spot while the Git panel is open, to go back. */
+.git-handle.return .git-handle-icon {
+  color: var(--text);
+}
+
+.git-handle.return:hover .git-handle-icon {
+  color: var(--accent);
+}
+
 .git-handle-icon {
   color: var(--accent);
   flex-shrink: 0;
@@ -217,10 +226,9 @@ body {
 /* ---------- git panel ---------- */
 
 .git-panel {
-  width: 420px;
-  min-width: 420px;
+  flex: 1;
+  min-width: 0;
   background: var(--bg-alt);
-  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
 }

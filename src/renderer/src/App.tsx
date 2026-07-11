@@ -131,23 +131,38 @@ export default function App(): React.JSX.Element {
     <div className="app">
       <Sidebar onOpenSettings={() => setSettingsOpen(true)} />
       <div className="main">
-        <div className="terminals">
+        {/* Terminals stay mounted (ptys alive) but are hidden while the Git
+            panel takes over the whole area. */}
+        <div className="terminals" style={{ display: gitPanelOpen ? 'none' : 'block' }}>
           {tabs.map((tab) => (
-            <TerminalView key={tab.id} tab={tab} active={tab.id === activeTabId} />
+            <TerminalView
+              key={tab.id}
+              tab={tab}
+              active={tab.id === activeTabId && !gitPanelOpen}
+            />
           ))}
         </div>
-        {gitInfo.isRepo && !gitPanelOpen && (
+        {gitPanelOpen && activeTab && <GitPanel tab={activeTab} />}
+        {gitPanelOpen ? (
           <button
-            className="git-handle"
-            onClick={() => setGitPanelOpen(true)}
-            title="Git パネルを開く (Ctrl+Shift+G)"
+            className="git-handle return"
+            onClick={() => setGitPanelOpen(false)}
+            title="ターミナルに戻る (Ctrl+Shift+G)"
           >
-            <span className="git-handle-icon">⎇</span>
-            <span className="git-handle-text">{gitInfo.branch || 'Git'}</span>
+            <span className="git-handle-icon">←</span>
+            <span className="git-handle-text">ターミナルに戻る</span>
           </button>
-        )}
-        {gitPanelOpen && activeTab && (
-          <GitPanel tab={activeTab} onClose={() => setGitPanelOpen(false)} />
+        ) : (
+          gitInfo.isRepo && (
+            <button
+              className="git-handle"
+              onClick={() => setGitPanelOpen(true)}
+              title="Git パネルを開く (Ctrl+Shift+G)"
+            >
+              <span className="git-handle-icon">⎇</span>
+              <span className="git-handle-text">{gitInfo.branch || 'Git'}</span>
+            </button>
+          )
         )}
       </div>
       {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}

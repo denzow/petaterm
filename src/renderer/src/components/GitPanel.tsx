@@ -5,10 +5,9 @@ import { DiffViewer } from './DiffViewer'
 
 interface GitPanelProps {
   tab: Tab
-  onClose: () => void
 }
 
-export function GitPanel({ tab, onClose }: GitPanelProps): React.JSX.Element {
+export function GitPanel({ tab }: GitPanelProps): React.JSX.Element {
   const [overview, setOverview] = useState<GitOverview | null>(null)
   const [diff, setDiff] = useState<GitDiffFile[]>([])
   const [newBranch, setNewBranch] = useState('')
@@ -63,9 +62,6 @@ export function GitPanel({ tab, onClose }: GitPanelProps): React.JSX.Element {
         </span>
         <button className="icon-button" onClick={() => void refresh()} title="更新">
           ⟳
-        </button>
-        <button className="icon-button" onClick={onClose} title="閉じる">
-          ×
         </button>
       </div>
 
