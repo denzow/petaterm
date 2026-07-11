@@ -80,6 +80,22 @@ body {
   flex-shrink: 0;
 }
 
+/* Claude Code busy indicator: a slowly spinning asterisk in the accent color. */
+.tab-badge.running {
+  display: inline-block;
+  color: var(--accent);
+  animation: badge-spin 2s linear infinite;
+}
+
+@keyframes badge-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .tab-label {
   flex: 1;
   min-width: 0;

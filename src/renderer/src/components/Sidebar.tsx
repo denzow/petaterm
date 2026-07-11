@@ -51,8 +51,26 @@ function TabItem({ tab, active }: { tab: Tab; active: boolean }): React.JSX.Elem
       }}
       title={tab.activityMessage || tab.cwd}
     >
-      <span className="tab-badge">
-        {tab.activity === 'permission' ? '🔔' : tab.activity === 'idle' ? '💤' : ''}
+      {/* Claude Code session status: shown while a session lives in this tab. */}
+      <span
+        className={`tab-badge${tab.activity === 'running' ? ' running' : ''}`}
+        title={
+          tab.activity === 'running'
+            ? 'Claude Code 実行中'
+            : tab.activity === 'permission'
+              ? 'Claude Code 許可待ち'
+              : tab.activity === 'idle'
+                ? 'Claude Code 入力待ち'
+                : undefined
+        }
+      >
+        {tab.activity === 'running'
+          ? '✳'
+          : tab.activity === 'permission'
+            ? '🔔'
+            : tab.activity === 'idle'
+              ? '💤'
+              : ''}
       </span>
       {editing ? (
         <input

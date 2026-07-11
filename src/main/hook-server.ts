@@ -10,6 +10,35 @@ export interface HookEvent {
 }
 
 /**
+ * Removes hook-<pid>.sock files left behind by instances that are no longer
+ * running (crash, SIGKILL). Live instances' sockets are left untouched, so
+ * multiple petaterm processes can coexist.
+ */
+export function cleanupStaleHookSockets(dir: string): void {
+  let names: string[]
+  try {
+    names = fs.readdirSync(dir)
+  } catch {
+    return
+  }
+  for (const name of names) {
+    const match = /^hook-(\d+)\.sock$/.exec(name)
+    if (!match) continue
+    const pid = Number(match[1])
+    if (pid === process.pid) continue
+    try {
+      process.kill(pid, 0) // throws when the owner is gone
+    } catch {
+      try {
+        fs.unlinkSync(path.join(dir, name))
+      } catch {
+        // already gone
+      }
+    }
+  }
+}
+
+/**
  * Unix domain socket server that receives events from the petaterm-hook
  * script registered in Claude Code's hooks (Notification / Stop).
  */

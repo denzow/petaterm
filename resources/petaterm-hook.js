@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Claude Code hook forwarder for petaterm.
 //
-// Registered in ~/.claude/settings.json for the Notification and Stop hook
-// events. Reads the hook payload from stdin and forwards a compact JSON line
+// Registered in ~/.claude/settings.json for the session-lifecycle hook events
+// (SessionStart / SessionEnd / UserPromptSubmit / PreToolUse / Notification /
+// Stop). Reads the hook payload from stdin and forwards a compact JSON line
 // to the petaterm Unix socket identified by $PETATERM_SOCKET, tagged with the
 // originating tab via $PETATERM_TAB_ID.
 //

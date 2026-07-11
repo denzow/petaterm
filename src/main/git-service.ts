@@ -112,6 +112,15 @@ export class GitService {
     }
   }
 
+  /** Absolute path of the repository root, or null when cwd is not in a repo. */
+  async repoRoot(cwd: string): Promise<string | null> {
+    try {
+      return (await simpleGit({ baseDir: cwd }).revparse(['--show-toplevel'])).trim() || null
+    } catch {
+      return null
+    }
+  }
+
   private async headExists(cwd: string): Promise<boolean> {
     try {
       await simpleGit({ baseDir: cwd }).revparse(['--verify', 'HEAD'])

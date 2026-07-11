@@ -39,12 +39,13 @@ export interface TabCwdEvent {
   cwd: string
 }
 
-/** Claude Code session activity, derived from hook events. */
-export type TabActivityState = 'permission' | 'idle'
+/** Claude Code session status, derived from hook events. */
+export type TabActivityState = 'running' | 'permission' | 'idle'
 
 export interface TabActivityEvent {
   tabId: string
-  state: TabActivityState
+  /** null = the Claude Code session ended; the tab's status icon disappears. */
+  state: TabActivityState | null
   message: string
 }
 

@@ -6,6 +6,11 @@ export interface Tab {
   /** User-assigned name; falls back to the cwd basename when null. */
   title: string | null
   cwd: string
+  /**
+   * Claude Code session status shown as the tab's icon. Persistent: it tracks
+   * hook events only (null = no session) and is never cleared by focusing or
+   * typing into the tab.
+   */
   activity: TabActivityState | null
   activityMessage: string
 }
@@ -23,8 +28,7 @@ interface TabsState {
   activateRelative: (offset: number) => void
   renameTab: (tabId: string, title: string | null) => void
   setCwd: (tabId: string, cwd: string) => void
-  setActivity: (tabId: string, activity: TabActivityState, message: string) => void
-  clearActivity: (tabId: string) => void
+  setActivity: (tabId: string, activity: TabActivityState | null, message: string) => void
 }
 
 let tabCounter = 0
@@ -83,17 +87,7 @@ export const useTabsStore = create<TabsState>((set, get) => ({
   },
 
   activateTab: (tabId) => {
-    set((s) => {
-      const tab = s.tabs.find((t) => t.id === tabId)
-      if (!tab) return s
-      // Switching to a tab acknowledges its badge.
-      return {
-        activeTabId: tabId,
-        tabs: s.tabs.map((t) =>
-          t.id === tabId ? { ...t, activity: null, activityMessage: '' } : t
-        )
-      }
-    })
+    set((s) => (s.tabs.some((t) => t.id === tabId) ? { activeTabId: tabId } : s))
   },
 
   activateRelative: (offset) => {
@@ -117,20 +111,13 @@ export const useTabsStore = create<TabsState>((set, get) => ({
   },
 
   setActivity: (tabId, activity, message) => {
-    set((s) => ({
-      tabs: s.tabs.map((t) =>
-        t.id === tabId ? { ...t, activity, activityMessage: message } : t
-      )
-    }))
-  },
-
-  clearActivity: (tabId) => {
     set((s) => {
       const tab = s.tabs.find((t) => t.id === tabId)
-      if (!tab || tab.activity === null) return s
+      // PreToolUse fires per tool call — skip the no-op updates.
+      if (!tab || (tab.activity === activity && tab.activityMessage === message)) return s
       return {
         tabs: s.tabs.map((t) =>
-          t.id === tabId ? { ...t, activity: null, activityMessage: '' } : t
+          t.id === tabId ? { ...t, activity, activityMessage: message } : t
         )
       }
     })

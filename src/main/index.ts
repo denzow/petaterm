@@ -12,7 +12,7 @@ import {
 import { PtyManager } from './pty-manager'
 import { CwdTracker } from './cwd-tracker'
 import { GitService } from './git-service'
-import { HookServer } from './hook-server'
+import { cleanupStaleHookSockets, HookServer } from './hook-server'
 import { HookInstaller } from './hook-installer'
 import { Notifier } from './notifier'
 
@@ -25,11 +25,25 @@ if (!app.isPackaged) {
   app.setPath('userData', app.getPath('userData') + '-dev')
 }
 
-const socketPath = path.join(app.getPath('userData'), 'hook.sock')
+// Per-instance socket so concurrent petaterm processes (e.g. a dev run next
+// to the daily instance) never steal each other's hook events. The path
+// reaches Claude Code through each pty's env ($PETATERM_SOCKET), so no global
+// registration depends on it.
+const socketPath = path.join(app.getPath('userData'), `hook-${process.pid}.sock`)
 const ptyManager = new PtyManager(() => mainWindow?.webContents ?? null, socketPath)
 const cwdTracker = new CwdTracker(ptyManager, () => mainWindow?.webContents ?? null)
 const gitService = new GitService()
-const notifier = new Notifier(() => mainWindow)
+// Desktop notifications are titled with the repo (or directory) the tab's
+// Claude Code session runs in, so multiple sessions stay distinguishable.
+const notifier = new Notifier(
+  () => mainWindow,
+  async (tabId) => {
+    const cwd = cwdTracker.getCwd(tabId)
+    if (!cwd) return null
+    const root = await gitService.repoRoot(cwd)
+    return path.basename(root ?? cwd)
+  }
+)
 const hookServer = new HookServer(socketPath, (event) => notifier.handleHookEvent(event))
 const hookInstaller = new HookInstaller()
 
@@ -105,6 +119,7 @@ app.whenReady().then(() => {
   // No application menu bar — petaterm drives everything from its own UI.
   Menu.setApplicationMenu(null)
   registerIpcHandlers()
+  cleanupStaleHookSockets(app.getPath('userData'))
   hookServer.start()
   cwdTracker.start()
   createWindow()

@@ -70,8 +70,6 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
     })
 
     term.onData((data) => {
-      // Typing into the tab acknowledges its badge.
-      useTabsStore.getState().clearActivity(tab.id)
       window.petaterm.ptyWrite(tab.id, data)
     })
     term.onResize(({ cols, rows }) => {
