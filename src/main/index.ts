@@ -18,6 +18,13 @@ import { Notifier } from './notifier'
 
 let mainWindow: BrowserWindow | null = null
 
+// In dev, keep settings/session/localStorage/hook socket separate from the
+// installed app so dev runs never clobber the real config. Must run before
+// anything reads userData (e.g. the socket path below).
+if (!app.isPackaged) {
+  app.setPath('userData', app.getPath('userData') + '-dev')
+}
+
 const socketPath = path.join(app.getPath('userData'), 'hook.sock')
 const ptyManager = new PtyManager(() => mainWindow?.webContents ?? null, socketPath)
 const cwdTracker = new CwdTracker(ptyManager, () => mainWindow?.webContents ?? null)
