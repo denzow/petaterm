@@ -3,7 +3,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
-import { Tab, useTabsStore } from '../stores/tabs'
+import { Tab } from '../stores/tabs'
 import { useKeybindingsStore } from '../stores/keybindings'
 import { resolveFontFamily, useAppearanceStore } from '../stores/appearance'
 
@@ -60,14 +60,6 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
         // Suppress the browser's own paste so the text isn't inserted twice.
         e.preventDefault()
         return false
-      }
-      // Panel switching only applies under a repo; otherwise let the shell
-      // handle the key (e.g. Ctrl+←/→ word movement).
-      if (
-        (action === 'panelLeft' || action === 'panelRight') &&
-        !useTabsStore.getState().activeRepo
-      ) {
-        return true
       }
       return false
     })

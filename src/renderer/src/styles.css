@@ -247,6 +247,59 @@ body {
   padding: 4px;
 }
 
+/* ---------- files panel ---------- */
+
+.files-area {
+  flex: 1;
+  overflow: auto;
+}
+
+.files-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.files-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.files-icon {
+  flex-shrink: 0;
+}
+
+.files-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.files-item.dir .files-name {
+  color: var(--accent);
+}
+
+.files-size,
+.files-mtime {
+  flex-shrink: 0;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.files-size {
+  width: 70px;
+  text-align: right;
+}
+
+.files-mtime {
+  width: 110px;
+}
+
 /* ---------- git panel ---------- */
 
 .git-panel {

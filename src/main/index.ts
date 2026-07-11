@@ -1,6 +1,9 @@
 import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron'
+import fs from 'node:fs'
 import path from 'node:path'
 import {
+  FsEntry,
+  FsListResult,
   GitResult,
   IPC,
   PtyCreateRequest,
@@ -87,6 +90,33 @@ function registerIpcHandlers(): void {
   })
   ipcMain.on(IPC.PtyDispose, (_e, payload: { tabId: string }) => {
     ptyManager.dispose(payload.tabId)
+  })
+
+  // Directory listing for the files panel.
+  ipcMain.handle(IPC.FsList, async (_e, dir: string): Promise<FsListResult> => {
+    try {
+      const dirents = await fs.promises.readdir(dir, { withFileTypes: true })
+      const entries: FsEntry[] = await Promise.all(
+        dirents.map(async (d) => {
+          try {
+            // stat (not lstat) so symlinks report their target's type/size.
+            const st = await fs.promises.stat(path.join(dir, d.name))
+            return {
+              name: d.name,
+              isDir: st.isDirectory(),
+              size: st.isDirectory() ? null : st.size,
+              mtime: st.mtimeMs
+            }
+          } catch {
+            // broken symlink etc. — keep the entry visible
+            return { name: d.name, isDir: d.isDirectory(), size: null, mtime: null }
+          }
+        })
+      )
+      return { ok: true, entries }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
   })
 
   ipcMain.handle(IPC.GitOverview, (_e, cwd: string): Promise<GitOverview> => {

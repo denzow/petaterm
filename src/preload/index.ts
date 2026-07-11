@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 import {
+  FsListResult,
   GitDiffFile,
   GitLogEntry,
   GitOverview,
@@ -31,6 +32,8 @@ const api = {
   onTabCwd: (cb: (payload: TabCwdEvent) => void): (() => void) => subscribe(IPC.TabCwd, cb),
   onTabActivity: (cb: (payload: TabActivityEvent) => void): (() => void) =>
     subscribe(IPC.TabActivity, cb),
+
+  fsList: (dir: string): Promise<FsListResult> => ipcRenderer.invoke(IPC.FsList, dir),
 
   gitOverview: (cwd: string): Promise<GitOverview> => ipcRenderer.invoke(IPC.GitOverview, cwd),
   gitCheckout: (cwd: string, branch: string): Promise<GitResult> =>

@@ -18,9 +18,6 @@ export interface Tab {
 interface TabsState {
   tabs: Tab[]
   activeTabId: string | null
-  /** Whether the active tab's cwd is a git repo (i.e. the Git panel exists). */
-  activeRepo: boolean
-  setActiveRepo: (value: boolean) => void
   addTab: () => void
   restoreTabs: (saved: { cwd: string; title: string | null }[], activeIndex: number) => void
   removeTab: (tabId: string) => void
@@ -42,9 +39,6 @@ export function tabLabel(tab: Tab): string {
 export const useTabsStore = create<TabsState>((set, get) => ({
   tabs: [],
   activeTabId: null,
-  activeRepo: false,
-
-  setActiveRepo: (value) => set((s) => (s.activeRepo === value ? s : { activeRepo: value })),
 
   addTab: () => {
     const id = `tab-${Date.now().toString(36)}-${++tabCounter}`

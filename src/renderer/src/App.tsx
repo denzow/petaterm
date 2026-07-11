@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { TerminalView } from './components/TerminalView'
+import { FilesPanel } from './components/FilesPanel'
 import { GitDiffPanel } from './components/GitDiffPanel'
 import { GitLogPanel } from './components/GitLogPanel'
 import { Settings } from './components/Settings'
@@ -8,9 +9,13 @@ import { useTabsStore } from './stores/tabs'
 import { ShortcutAction, useKeybindingsStore } from './stores/keybindings'
 import { loadSession, saveSession } from './stores/session'
 
-/** Main-area panels, in left-to-right order for Ctrl+←/→ switching. */
-const PANEL_ORDER = ['terminal', 'diff', 'log'] as const
-type MainPanel = (typeof PANEL_ORDER)[number]
+type MainPanel = 'terminal' | 'files' | 'diff' | 'log'
+
+/** Main-area panels in left-to-right order for Ctrl+←/→ switching; the Git
+    panels only exist when the active tab's cwd is a repository. */
+function panelOrder(isRepo: boolean): MainPanel[] {
+  return isRepo ? ['terminal', 'files', 'diff', 'log'] : ['terminal', 'files']
+}
 
 export default function App(): React.JSX.Element {
   const tabs = useTabsStore((s) => s.tabs)
@@ -49,12 +54,9 @@ export default function App(): React.JSX.Element {
     }
   }, [activeCwd, panel])
 
-  // Never leave a Git panel open once the active tab is no longer a repo, and
-  // mirror repo-ness into the store so the terminal key handler can let panel
-  // switch keys (Ctrl+←/→) pass through to the shell when no Git panels exist.
+  // Never leave a Git panel open once the active tab is no longer a repo.
   useEffect(() => {
-    if (!gitInfo.isRepo) setPanel('terminal')
-    useTabsStore.getState().setActiveRepo(gitInfo.isRepo)
+    if (!gitInfo.isRepo) setPanel((p) => (p === 'diff' || p === 'log' ? 'terminal' : p))
   }, [gitInfo.isRepo])
 
   // Global IPC listeners (registered once).
@@ -115,11 +117,10 @@ export default function App(): React.JSX.Element {
           break
         case 'panelLeft':
         case 'panelRight': {
-          // Step through terminal / diff / log (Git panels only exist under a
-          // repository).
-          const index = PANEL_ORDER.indexOf(panelRef.current)
+          const order = panelOrder(isRepoRef.current)
+          const index = order.indexOf(panelRef.current)
           const next = index + (action === 'panelLeft' ? -1 : 1)
-          if (next >= 0 && next < PANEL_ORDER.length) setPanel(PANEL_ORDER[next])
+          if (next >= 0 && next < order.length) setPanel(order[next])
           break
         }
         case 'prevTab':
@@ -138,9 +139,6 @@ export default function App(): React.JSX.Element {
       // copy/paste are handled inside the focused TerminalView (they need the
       // xterm instance); elsewhere the native clipboard behavior should win.
       if (action === 'copy' || action === 'paste') return
-      // Panel switching only applies under a repo; otherwise let the key reach
-      // the shell (e.g. Ctrl+←/→ word movement).
-      if ((action === 'panelLeft' || action === 'panelRight') && !isRepoRef.current) return
       e.preventDefault()
       runAction(action)
     }
@@ -152,39 +150,48 @@ export default function App(): React.JSX.Element {
     <div className="app">
       <Sidebar onOpenSettings={() => setSettingsOpen(true)} />
       <div className="main">
-        {/* When the active tab is a git repo, a top bar switches the main area
-            between the terminal and the two Git panels (diff / log). */}
-        {gitInfo.isRepo && (
-          <div className="view-tabs">
-            <button
-              className={`view-tab${panel === 'terminal' ? ' active' : ''}`}
-              onClick={() => setPanel('terminal')}
-              title="terminal パネル (Ctrl+←)"
-            >
-              terminal
-            </button>
-            <button
-              className={`view-tab${panel === 'diff' ? ' active' : ''}`}
-              onClick={() => setPanel('diff')}
-              title="diff パネル (Ctrl+←/→)"
-            >
-              diff
-            </button>
-            <button
-              className={`view-tab${panel === 'log' ? ' active' : ''}`}
-              onClick={() => setPanel('log')}
-              title="log パネル (Ctrl+→)"
-            >
-              log
-            </button>
-            <span className="view-tabs-branch" title="現在のブランチ">
-              <span className="view-tab-icon">⎇</span>
-              {gitInfo.branch}
-            </span>
-          </div>
-        )}
+        {/* A top bar switches the main area between the terminal, the files
+            panel, and (when the cwd is a git repo) the two Git panels. */}
+        <div className="view-tabs">
+          <button
+            className={`view-tab${panel === 'terminal' ? ' active' : ''}`}
+            onClick={() => setPanel('terminal')}
+            title="terminal パネル (Ctrl+←)"
+          >
+            terminal
+          </button>
+          <button
+            className={`view-tab${panel === 'files' ? ' active' : ''}`}
+            onClick={() => setPanel('files')}
+            title="files パネル (Ctrl+←/→)"
+          >
+            files
+          </button>
+          {gitInfo.isRepo && (
+            <>
+              <button
+                className={`view-tab${panel === 'diff' ? ' active' : ''}`}
+                onClick={() => setPanel('diff')}
+                title="diff パネル (Ctrl+←/→)"
+              >
+                diff
+              </button>
+              <button
+                className={`view-tab${panel === 'log' ? ' active' : ''}`}
+                onClick={() => setPanel('log')}
+                title="log パネル (Ctrl+→)"
+              >
+                log
+              </button>
+              <span className="view-tabs-branch" title="現在のブランチ">
+                <span className="view-tab-icon">⎇</span>
+                {gitInfo.branch}
+              </span>
+            </>
+          )}
+        </div>
         <div className="view-content">
-          {/* Terminals stay mounted (ptys alive) but are hidden while a Git
+          {/* Terminals stay mounted (ptys alive) but are hidden while another
               panel takes over the area. */}
           <div className="terminals" style={{ display: panel === 'terminal' ? 'block' : 'none' }}>
             {tabs.map((tab) => (
@@ -195,6 +202,7 @@ export default function App(): React.JSX.Element {
               />
             ))}
           </div>
+          {panel === 'files' && activeTab && <FilesPanel tab={activeTab} />}
           {panel === 'diff' && activeTab && <GitDiffPanel tab={activeTab} />}
           {panel === 'log' && activeTab && <GitLogPanel tab={activeTab} />}
         </div>

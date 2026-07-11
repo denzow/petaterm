@@ -9,6 +9,7 @@ export const IPC = {
   PtyExit: 'pty:exit',
   TabCwd: 'tab:cwd',
   TabActivity: 'tab:activity',
+  FsList: 'fs:list',
   GitOverview: 'git:overview',
   GitCheckout: 'git:checkout',
   GitCreateBranch: 'git:create-branch',
@@ -48,6 +49,17 @@ export interface TabActivityEvent {
   state: TabActivityState | null
   message: string
 }
+
+export interface FsEntry {
+  name: string
+  isDir: boolean
+  /** Bytes; null for directories and unreadable entries (e.g. broken symlinks). */
+  size: number | null
+  /** Epoch milliseconds; null when unreadable. */
+  mtime: number | null
+}
+
+export type FsListResult = { ok: true; entries: FsEntry[] } | { ok: false; error: string }
 
 export interface GitOverview {
   isRepo: boolean
