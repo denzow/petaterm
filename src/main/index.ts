@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron'
 import path from 'node:path'
 import {
   GitResult,
@@ -95,6 +95,8 @@ function registerIpcHandlers(): void {
 }
 
 app.whenReady().then(() => {
+  // No application menu bar — petaterm drives everything from its own UI.
+  Menu.setApplicationMenu(null)
   registerIpcHandlers()
   hookServer.start()
   cwdTracker.start()
