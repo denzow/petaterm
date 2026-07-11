@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "electron-vite dev -- --no-sandbox",
     "build": "electron-vite build",
-    "start": "electron-vite preview",
+    "start": "electron-vite preview -- --no-sandbox",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "postinstall": "electron-builder install-app-deps",
     "package": "electron-vite build && electron-builder --linux"
