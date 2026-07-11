@@ -12,7 +12,11 @@ export const IPC = {
   GitOverview: 'git:overview',
   GitCheckout: 'git:checkout',
   GitCreateBranch: 'git:create-branch',
-  GitDiff: 'git:diff'
+  GitDiff: 'git:diff',
+  GitLog: 'git:log',
+  GitCommit: 'git:commit',
+  GitUndoCommit: 'git:undo-commit',
+  GitRevert: 'git:revert'
 } as const
 
 export interface PtyCreateRequest {
@@ -74,4 +78,14 @@ export interface GitDiffFile {
   oldPath: string | null
   status: DiffFileStatus
   hunks: GitDiffHunk[]
+}
+
+export interface GitLogEntry {
+  hash: string
+  shortHash: string
+  subject: string
+  author: string
+  /** ISO-ish date string from git (e.g. "2026-07-11 10:59:22 +0900"). */
+  date: string
+  isHead: boolean
 }

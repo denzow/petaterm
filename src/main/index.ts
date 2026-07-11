@@ -6,6 +6,7 @@ import {
   PtyCreateRequest,
   PtyDataEvent,
   GitDiffFile,
+  GitLogEntry,
   GitOverview
 } from '../shared/ipc'
 import { PtyManager } from './pty-manager'
@@ -78,6 +79,18 @@ function registerIpcHandlers(): void {
   })
   ipcMain.handle(IPC.GitDiff, (_e, cwd: string): Promise<GitDiffFile[]> => {
     return gitService.diff(cwd)
+  })
+  ipcMain.handle(IPC.GitLog, (_e, cwd: string): Promise<GitLogEntry[]> => {
+    return gitService.log(cwd)
+  })
+  ipcMain.handle(IPC.GitCommit, (_e, cwd: string, message: string): Promise<GitResult> => {
+    return gitService.commit(cwd, message)
+  })
+  ipcMain.handle(IPC.GitUndoCommit, (_e, cwd: string): Promise<GitResult> => {
+    return gitService.undoLastCommit(cwd)
+  })
+  ipcMain.handle(IPC.GitRevert, (_e, cwd: string, hash: string): Promise<GitResult> => {
+    return gitService.revert(cwd, hash)
   })
 }
 

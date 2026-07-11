@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 import {
   GitDiffFile,
+  GitLogEntry,
   GitOverview,
   GitResult,
   IPC,
@@ -36,7 +37,13 @@ const api = {
     ipcRenderer.invoke(IPC.GitCheckout, cwd, branch),
   gitCreateBranch: (cwd: string, branch: string): Promise<GitResult> =>
     ipcRenderer.invoke(IPC.GitCreateBranch, cwd, branch),
-  gitDiff: (cwd: string): Promise<GitDiffFile[]> => ipcRenderer.invoke(IPC.GitDiff, cwd)
+  gitDiff: (cwd: string): Promise<GitDiffFile[]> => ipcRenderer.invoke(IPC.GitDiff, cwd),
+  gitLog: (cwd: string): Promise<GitLogEntry[]> => ipcRenderer.invoke(IPC.GitLog, cwd),
+  gitCommit: (cwd: string, message: string): Promise<GitResult> =>
+    ipcRenderer.invoke(IPC.GitCommit, cwd, message),
+  gitUndoCommit: (cwd: string): Promise<GitResult> => ipcRenderer.invoke(IPC.GitUndoCommit, cwd),
+  gitRevert: (cwd: string, hash: string): Promise<GitResult> =>
+    ipcRenderer.invoke(IPC.GitRevert, cwd, hash)
 }
 
 export type PetatermApi = typeof api
