@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { GitDiffFile, GitDiffHunk, GitDiffLine } from '../../../shared/ipc'
 
 interface Selection {
@@ -102,52 +102,55 @@ export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Elemen
               <div key={hunkIndex} className="diff-hunk">
                 <div className="diff-hunk-header">{hunk.header}</div>
                 {hunk.lines.map((line, lineIndex) => (
-                  <div
-                    key={lineIndex}
-                    className={[
-                      'diff-line',
-                      `diff-line-${line.type}`,
-                      selected && lineIndex >= selected.start && lineIndex <= selected.end
-                        ? 'diff-line-selected'
-                        : ''
-                    ].join(' ')}
-                    onClick={(e) => handleLineClick(file.path, hunkIndex, lineIndex, e.shiftKey)}
-                  >
-                    <span className="diff-line-num">{line.oldLine ?? ''}</span>
-                    <span className="diff-line-num">{line.newLine ?? ''}</span>
-                    <span className="diff-line-text">
-                      {prefixOf(line)}
-                      {line.text}
-                    </span>
-                  </div>
-                ))}
-                {selected && (
-                  <div className="diff-comment-box">
-                    <textarea
-                      autoFocus
-                      placeholder="このコードへのコメント… (Claude Code に送信されます)"
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                    />
-                    <div className="diff-comment-actions">
-                      <button
-                        onClick={() => {
-                          setSelection(null)
-                          setComment('')
-                        }}
-                      >
-                        キャンセル
-                      </button>
-                      <button
-                        className="primary"
-                        disabled={!comment.trim()}
-                        onClick={() => send(file, hunk)}
-                      >
-                        Claude に送る
-                      </button>
+                  <Fragment key={lineIndex}>
+                    <div
+                      className={[
+                        'diff-line',
+                        `diff-line-${line.type}`,
+                        selected && lineIndex >= selected.start && lineIndex <= selected.end
+                          ? 'diff-line-selected'
+                          : ''
+                      ].join(' ')}
+                      onClick={(e) => handleLineClick(file.path, hunkIndex, lineIndex, e.shiftKey)}
+                    >
+                      <span className="diff-line-num">{line.oldLine ?? ''}</span>
+                      <span className="diff-line-num">{line.newLine ?? ''}</span>
+                      <span className="diff-line-text">
+                        {prefixOf(line)}
+                        {line.text}
+                      </span>
                     </div>
-                  </div>
-                )}
+                    {/* GitHub-review style: the comment box sits right under the
+                        last selected line, not at the end of the hunk. */}
+                    {selected && lineIndex === selected.end && (
+                      <div className="diff-comment-box">
+                        <textarea
+                          autoFocus
+                          placeholder="このコードへのコメント… (Claude Code に送信されます)"
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                        />
+                        <div className="diff-comment-actions">
+                          <button
+                            onClick={() => {
+                              setSelection(null)
+                              setComment('')
+                            }}
+                          >
+                            キャンセル
+                          </button>
+                          <button
+                            className="primary"
+                            disabled={!comment.trim()}
+                            onClick={() => send(file, hunk)}
+                          >
+                            Claude に送る
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </Fragment>
+                ))}
               </div>
             )
           })}
