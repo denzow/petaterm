@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 import {
   FsListResult,
+  FsOpenResult,
   GitDiffFile,
   GitLogEntry,
   GitOverview,
@@ -34,6 +35,9 @@ const api = {
     subscribe(IPC.TabActivity, cb),
 
   fsList: (dir: string): Promise<FsListResult> => ipcRenderer.invoke(IPC.FsList, dir),
+  fsOpen: (target: string): Promise<FsOpenResult> => ipcRenderer.invoke(IPC.FsOpen, target),
+  fsContextMenu: (target: string, x: number, y: number): Promise<void> =>
+    ipcRenderer.invoke(IPC.FsContextMenu, target, x, y),
 
   gitOverview: (cwd: string): Promise<GitOverview> => ipcRenderer.invoke(IPC.GitOverview, cwd),
   gitCheckout: (cwd: string, branch: string): Promise<GitResult> =>

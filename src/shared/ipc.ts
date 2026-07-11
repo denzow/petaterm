@@ -10,6 +10,8 @@ export const IPC = {
   TabCwd: 'tab:cwd',
   TabActivity: 'tab:activity',
   FsList: 'fs:list',
+  FsOpen: 'fs:open',
+  FsContextMenu: 'fs:context-menu',
   GitOverview: 'git:overview',
   GitCheckout: 'git:checkout',
   GitCreateBranch: 'git:create-branch',
@@ -60,6 +62,8 @@ export interface FsEntry {
 }
 
 export type FsListResult = { ok: true; entries: FsEntry[] } | { ok: false; error: string }
+
+export type FsOpenResult = { ok: true } | { ok: false; error: string }
 
 export interface GitOverview {
   isRepo: boolean

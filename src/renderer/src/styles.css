@@ -266,6 +266,12 @@ body {
   padding: 5px 12px;
   border-bottom: 1px solid var(--border);
   font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.files-item:hover {
+  background: var(--bg-hover);
 }
 
 .files-icon {

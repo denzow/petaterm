@@ -12,9 +12,10 @@ import { loadSession, saveSession } from './stores/session'
 type MainPanel = 'terminal' | 'files' | 'diff' | 'log'
 
 /** Main-area panels in left-to-right order for Ctrl+←/→ switching; the Git
-    panels only exist when the active tab's cwd is a repository. */
+    panels only exist when the active tab's cwd is a repository, and files
+    sits to their right. */
 function panelOrder(isRepo: boolean): MainPanel[] {
-  return isRepo ? ['terminal', 'files', 'diff', 'log'] : ['terminal', 'files']
+  return isRepo ? ['terminal', 'diff', 'log', 'files'] : ['terminal', 'files']
 }
 
 export default function App(): React.JSX.Element {
@@ -160,13 +161,6 @@ export default function App(): React.JSX.Element {
           >
             terminal
           </button>
-          <button
-            className={`view-tab${panel === 'files' ? ' active' : ''}`}
-            onClick={() => setPanel('files')}
-            title="files パネル (Ctrl+←/→)"
-          >
-            files
-          </button>
           {gitInfo.isRepo && (
             <>
               <button
@@ -179,15 +173,24 @@ export default function App(): React.JSX.Element {
               <button
                 className={`view-tab${panel === 'log' ? ' active' : ''}`}
                 onClick={() => setPanel('log')}
-                title="log パネル (Ctrl+→)"
+                title="log パネル (Ctrl+←/→)"
               >
                 log
               </button>
-              <span className="view-tabs-branch" title="現在のブランチ">
-                <span className="view-tab-icon">⎇</span>
-                {gitInfo.branch}
-              </span>
             </>
+          )}
+          <button
+            className={`view-tab${panel === 'files' ? ' active' : ''}`}
+            onClick={() => setPanel('files')}
+            title="files パネル (Ctrl+→)"
+          >
+            files
+          </button>
+          {gitInfo.isRepo && (
+            <span className="view-tabs-branch" title="現在のブランチ">
+              <span className="view-tab-icon">⎇</span>
+              {gitInfo.branch}
+            </span>
           )}
         </div>
         <div className="view-content">

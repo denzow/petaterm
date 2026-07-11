@@ -36,6 +36,12 @@ export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
     void refresh()
   }, [refresh])
 
+  const open = async (entry: FsEntry): Promise<void> => {
+    // Files open in the OS default app; directories open in the file manager.
+    const result = await window.petaterm.fsOpen(`${tab.cwd}/${entry.name}`)
+    setError(result.ok ? '' : result.error)
+  }
+
   const sorted = [...entries].sort((a, b) =>
     a.isDir !== b.isDir ? (a.isDir ? -1 : 1) : a.name.localeCompare(b.name, 'ja')
   )
@@ -62,7 +68,16 @@ export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
         ) : (
           <div className="files-list">
             {sorted.map((e) => (
-              <div key={e.name} className={`files-item${e.isDir ? ' dir' : ''}`}>
+              <div
+                key={e.name}
+                className={`files-item${e.isDir ? ' dir' : ''}`}
+                onDoubleClick={() => void open(e)}
+                onContextMenu={(ev) => {
+                  ev.preventDefault()
+                  void window.petaterm.fsContextMenu(`${tab.cwd}/${e.name}`, ev.clientX, ev.clientY)
+                }}
+                title="ダブルクリックで開く / 右クリックでメニュー"
+              >
                 <span className="files-icon">{e.isDir ? '📁' : '📄'}</span>
                 <span className="files-name">{e.name}</span>
                 <span className="files-size">{e.isDir ? '' : formatSize(e.size)}</span>

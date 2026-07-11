@@ -1,9 +1,10 @@
-import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, shell } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import {
   FsEntry,
   FsListResult,
+  FsOpenResult,
   GitResult,
   IPC,
   PtyCreateRequest,
@@ -15,6 +16,7 @@ import {
 import { PtyManager } from './pty-manager'
 import { CwdTracker } from './cwd-tracker'
 import { GitService } from './git-service'
+import { AppCandidate, launchWith, listAllApps, listAppsFor } from './open-with'
 import { cleanupStaleHookSockets, HookServer } from './hook-server'
 import { HookInstaller } from './hook-installer'
 import { Notifier } from './notifier'
@@ -117,6 +119,48 @@ function registerIpcHandlers(): void {
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
+  })
+
+  // Open a file (or directory) with the OS default application.
+  ipcMain.handle(IPC.FsOpen, async (_e, target: string): Promise<FsOpenResult> => {
+    const error = await shell.openPath(target)
+    return error ? { ok: false, error } : { ok: true }
+  })
+
+  // Right-click menu for a files-panel entry: default open, open-with app
+  // list (from the target's MIME type), reveal in file manager.
+  ipcMain.handle(IPC.FsContextMenu, async (e, target: string, x: number, y: number): Promise<void> => {
+    const win = BrowserWindow.fromWebContents(e.sender) ?? mainWindow
+    if (!win) return
+    const locale = app.getLocale()
+    let apps: AppCandidate[] = []
+    try {
+      apps = await listAppsFor(target, locale)
+    } catch {
+      // xdg-mime/gio unavailable — the submenu just shows the all-apps list
+    }
+    const appItem = (a: AppCandidate): Electron.MenuItemConstructorOptions => ({
+      label: a.name,
+      // Menus render icons at their natural size, so downscale explicitly.
+      icon: a.icon ? nativeImage.createFromPath(a.icon).resize({ width: 16, height: 16 }) : undefined,
+      click: (): void => launchWith(a.desktopFile, target)
+    })
+    const menu = Menu.buildFromTemplate([
+      { label: '開く', click: () => void shell.openPath(target) },
+      {
+        label: 'アプリケーションで開く',
+        submenu: [
+          ...apps.map(appItem),
+          ...(apps.length ? [{ type: 'separator' as const }] : []),
+          { label: 'すべてのアプリケーション', submenu: listAllApps(locale).map(appItem) }
+        ]
+      },
+      { type: 'separator' },
+      { label: 'ファイルマネージャーで表示', click: () => shell.showItemInFolder(target) }
+    ])
+    // Anchor to the clicked row (the OS cursor can be elsewhere, e.g. when
+    // the menu is triggered synthetically or via keyboard).
+    menu.popup({ window: win, x: Math.round(x), y: Math.round(y) })
   })
 
   ipcMain.handle(IPC.GitOverview, (_e, cwd: string): Promise<GitOverview> => {
