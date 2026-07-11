@@ -1,16 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { TerminalView } from './components/TerminalView'
-import { GitPanel } from './components/GitPanel'
+import { GitDiffPanel } from './components/GitDiffPanel'
+import { GitLogPanel } from './components/GitLogPanel'
 import { Settings } from './components/Settings'
 import { useTabsStore } from './stores/tabs'
 import { ShortcutAction, useKeybindingsStore } from './stores/keybindings'
 import { loadSession, saveSession } from './stores/session'
 
+/** Main-area panels, in left-to-right order for Ctrl+←/→ switching. */
+const PANEL_ORDER = ['terminal', 'diff', 'log'] as const
+type MainPanel = (typeof PANEL_ORDER)[number]
+
 export default function App(): React.JSX.Element {
   const tabs = useTabsStore((s) => s.tabs)
   const activeTabId = useTabsStore((s) => s.activeTabId)
-  const [gitPanelOpen, setGitPanelOpen] = useState(false)
+  const [panel, setPanel] = useState<MainPanel>('terminal')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [gitInfo, setGitInfo] = useState<{ isRepo: boolean; branch: string }>({
     isRepo: false,
@@ -20,13 +25,15 @@ export default function App(): React.JSX.Element {
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null
   const activeCwd = activeTab?.cwd ?? ''
 
-  // Keep the latest isRepo readable from the once-registered key handler.
+  // Keep the latest isRepo / panel readable from the once-registered key handler.
   const isRepoRef = useRef(false)
   isRepoRef.current = gitInfo.isRepo
+  const panelRef = useRef<MainPanel>('terminal')
+  panelRef.current = panel
 
   // Detect whether the active tab's cwd is a git repo (and which branch), so
-  // the right-edge Git handle only appears under a repository. Re-checked when
-  // the cwd changes and whenever the panel closes (to pick up branch changes).
+  // the Git panels only appear under a repository. Re-checked when the cwd
+  // changes and whenever the panel switches (to pick up branch changes).
   useEffect(() => {
     let cancelled = false
     if (!activeCwd) {
@@ -40,13 +47,13 @@ export default function App(): React.JSX.Element {
     return () => {
       cancelled = true
     }
-  }, [activeCwd, gitPanelOpen])
+  }, [activeCwd, panel])
 
-  // Never leave the panel open once the active tab is no longer a repo, and
+  // Never leave a Git panel open once the active tab is no longer a repo, and
   // mirror repo-ness into the store so the terminal key handler can let panel
-  // switch keys (Ctrl+←/→) pass through to the shell when no Git panel exists.
+  // switch keys (Ctrl+←/→) pass through to the shell when no Git panels exist.
   useEffect(() => {
-    if (!gitInfo.isRepo) setGitPanelOpen(false)
+    if (!gitInfo.isRepo) setPanel('terminal')
     useTabsStore.getState().setActiveRepo(gitInfo.isRepo)
   }, [gitInfo.isRepo])
 
@@ -107,13 +114,14 @@ export default function App(): React.JSX.Element {
           }
           break
         case 'panelLeft':
-          // Left panel = terminal.
-          setGitPanelOpen(false)
+        case 'panelRight': {
+          // Step through terminal / diff / log (Git panels only exist under a
+          // repository).
+          const index = PANEL_ORDER.indexOf(panelRef.current)
+          const next = index + (action === 'panelLeft' ? -1 : 1)
+          if (next >= 0 && next < PANEL_ORDER.length) setPanel(PANEL_ORDER[next])
           break
-        case 'panelRight':
-          // Right panel = Git (only exists under a repository).
-          setGitPanelOpen(true)
-          break
+        }
         case 'prevTab':
           store.activateRelative(-1)
           break
@@ -142,39 +150,50 @@ export default function App(): React.JSX.Element {
       <Sidebar onOpenSettings={() => setSettingsOpen(true)} />
       <div className="main">
         {/* When the active tab is a git repo, a top bar switches the main area
-            between the terminal and Git panels. */}
+            between the terminal and the two Git panels (diff / log). */}
         {gitInfo.isRepo && (
           <div className="view-tabs">
             <button
-              className={`view-tab${!gitPanelOpen ? ' active' : ''}`}
-              onClick={() => setGitPanelOpen(false)}
+              className={`view-tab${panel === 'terminal' ? ' active' : ''}`}
+              onClick={() => setPanel('terminal')}
               title="terminal パネル (Ctrl+←)"
             >
               terminal
             </button>
             <button
-              className={`view-tab${gitPanelOpen ? ' active' : ''}`}
-              onClick={() => setGitPanelOpen(true)}
-              title="Git パネル (Ctrl+→)"
+              className={`view-tab${panel === 'diff' ? ' active' : ''}`}
+              onClick={() => setPanel('diff')}
+              title="diff パネル (Ctrl+←/→)"
             >
-              <span className="view-tab-icon">⎇</span>
-              {gitInfo.branch || 'Git'}
+              diff
             </button>
+            <button
+              className={`view-tab${panel === 'log' ? ' active' : ''}`}
+              onClick={() => setPanel('log')}
+              title="log パネル (Ctrl+→)"
+            >
+              log
+            </button>
+            <span className="view-tabs-branch" title="現在のブランチ">
+              <span className="view-tab-icon">⎇</span>
+              {gitInfo.branch}
+            </span>
           </div>
         )}
         <div className="view-content">
-          {/* Terminals stay mounted (ptys alive) but are hidden while the Git
-              view takes over the area. */}
-          <div className="terminals" style={{ display: gitPanelOpen ? 'none' : 'block' }}>
+          {/* Terminals stay mounted (ptys alive) but are hidden while a Git
+              panel takes over the area. */}
+          <div className="terminals" style={{ display: panel === 'terminal' ? 'block' : 'none' }}>
             {tabs.map((tab) => (
               <TerminalView
                 key={tab.id}
                 tab={tab}
-                active={tab.id === activeTabId && !gitPanelOpen}
+                active={tab.id === activeTabId && panel === 'terminal'}
               />
             ))}
           </div>
-          {gitPanelOpen && activeTab && <GitPanel tab={activeTab} />}
+          {panel === 'diff' && activeTab && <GitDiffPanel tab={activeTab} />}
+          {panel === 'log' && activeTab && <GitLogPanel tab={activeTab} />}
         </div>
       </div>
       {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
