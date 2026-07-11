@@ -131,39 +131,40 @@ export default function App(): React.JSX.Element {
     <div className="app">
       <Sidebar onOpenSettings={() => setSettingsOpen(true)} />
       <div className="main">
-        {/* Terminals stay mounted (ptys alive) but are hidden while the Git
-            panel takes over the whole area. */}
-        <div className="terminals" style={{ display: gitPanelOpen ? 'none' : 'block' }}>
-          {tabs.map((tab) => (
-            <TerminalView
-              key={tab.id}
-              tab={tab}
-              active={tab.id === activeTabId && !gitPanelOpen}
-            />
-          ))}
-        </div>
-        {gitPanelOpen && activeTab && <GitPanel tab={activeTab} />}
-        {gitPanelOpen ? (
-          <button
-            className="git-handle return"
-            onClick={() => setGitPanelOpen(false)}
-            title="ターミナルに戻る (Ctrl+Shift+G)"
-          >
-            <span className="git-handle-icon">←</span>
-            <span className="git-handle-text">ターミナルに戻る</span>
-          </button>
-        ) : (
-          gitInfo.isRepo && (
+        {/* When the active tab is a git repo, a top tab bar switches the main
+            area between the terminal and the Git view. */}
+        {gitInfo.isRepo && (
+          <div className="view-tabs">
             <button
-              className="git-handle"
-              onClick={() => setGitPanelOpen(true)}
-              title="Git パネルを開く (Ctrl+Shift+G)"
+              className={`view-tab${!gitPanelOpen ? ' active' : ''}`}
+              onClick={() => setGitPanelOpen(false)}
             >
-              <span className="git-handle-icon">⎇</span>
-              <span className="git-handle-text">{gitInfo.branch || 'Git'}</span>
+              ターミナル
             </button>
-          )
+            <button
+              className={`view-tab${gitPanelOpen ? ' active' : ''}`}
+              onClick={() => setGitPanelOpen(true)}
+              title="Git (Ctrl+Shift+G)"
+            >
+              <span className="view-tab-icon">⎇</span>
+              {gitInfo.branch || 'Git'}
+            </button>
+          </div>
         )}
+        <div className="view-content">
+          {/* Terminals stay mounted (ptys alive) but are hidden while the Git
+              view takes over the area. */}
+          <div className="terminals" style={{ display: gitPanelOpen ? 'none' : 'block' }}>
+            {tabs.map((tab) => (
+              <TerminalView
+                key={tab.id}
+                tab={tab}
+                active={tab.id === activeTabId && !gitPanelOpen}
+              />
+            ))}
+          </div>
+          {gitPanelOpen && activeTab && <GitPanel tab={activeTab} />}
+        </div>
       </div>
       {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
     </div>

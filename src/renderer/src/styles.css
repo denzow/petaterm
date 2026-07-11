@@ -162,53 +162,51 @@ body {
   flex: 1;
   min-width: 0;
   display: flex;
-  position: relative;
+  flex-direction: column;
 }
 
-/* ---------- right-edge git handle ---------- */
+/* ---------- top view tabs (terminal / git) ---------- */
 
-.git-handle {
-  position: absolute;
-  top: 10px;
-  right: 0;
-  z-index: 5;
+.view-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px 0;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+}
+
+.view-tab {
   display: flex;
   align-items: center;
   gap: 6px;
-  max-width: 220px;
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-right: none;
-  border-radius: 6px 0 0 6px;
-  color: var(--text);
-  padding: 6px 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  color: var(--text-dim);
+  padding: 6px 14px;
   cursor: pointer;
-  box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-.git-handle:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-/* Shown in the same spot while the Git panel is open, to go back. */
-.git-handle.return .git-handle-icon {
+.view-tab:hover {
   color: var(--text);
 }
 
-.git-handle.return:hover .git-handle-icon {
+.view-tab.active {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.view-tab-icon {
   color: var(--accent);
 }
 
-.git-handle-icon {
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.git-handle-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.view-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  position: relative;
 }
 
 .terminals {
