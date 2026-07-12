@@ -29,6 +29,16 @@ npm run dev
 
 初回起動時に「Claude Code 連携をセットアップしますか?」と聞かれます。承諾すると `~/.claude/settings.json` に hooks がマージ追記されます(既存の設定は壊しません。バックアップを `.petaterm.bak` に作成)。petaterm 以外で起動した Claude Code には影響しません。
 
+### デスクトップエントリ(アプリアイコン)
+
+リポジトリから直接起動する場合、GNOME のドック / タスクバーのアイコンはウィンドウ側の設定ではなく WM_CLASS にマッチする .desktop ファイルから解決されるため、そのままでは汎用アイコン(歯車)になります。以下で `~/.local/share` にデスクトップエントリとアイコンをインストールすると、ドックに petaterm のアイコンが表示され、ドックからの起動・ピン留めもできるようになります。
+
+```bash
+npm run install-desktop
+```
+
+再実行しても安全です。`resources/icon.png` / `icon.svg` を変更したときやリポジトリを移動したときは再実行してください。AppImage(`npm run package`)にはアイコンが同梱されるので、この手順は不要です。
+
 ## キーボードショートカット
 
 | 操作 | キー |
@@ -49,6 +59,7 @@ npm run dev
 | `npm run build` | `out/` へプロダクションビルド |
 | `npm run typecheck` | 型チェック |
 | `npm run package` | AppImage をビルド(electron-builder) |
+| `npm run install-desktop` | ~/.local/share にデスクトップエントリとアイコンをインストール |
 
 ## 技術構成
 

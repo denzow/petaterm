@@ -11,7 +11,8 @@
     "start": "electron-vite preview -- --no-sandbox",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "postinstall": "electron-builder install-app-deps",
-    "package": "electron-vite build && electron-builder --linux"
+    "package": "electron-vite build && electron-builder --linux",
+    "install-desktop": "scripts/install-desktop.sh"
   },
   "build": {
     "appId": "dev.denzow.petaterm",
@@ -28,7 +29,8 @@
     ],
     "linux": {
       "target": "AppImage",
-      "category": "TerminalEmulator"
+      "category": "TerminalEmulator",
+      "icon": "resources/icon.png"
     }
   },
   "dependencies": {

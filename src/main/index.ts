@@ -20,6 +20,7 @@ import { AppCandidate, launchWith, listAllApps, listAppsFor } from './open-with'
 import { cleanupStaleHookSockets, HookServer } from './hook-server'
 import { HookInstaller } from './hook-installer'
 import { Notifier } from './notifier'
+import appIcon from '../../resources/icon.png?asset'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -57,6 +58,7 @@ function createWindow(): void {
     width: 1280,
     height: 800,
     title: 'petaterm',
+    icon: appIcon,
     backgroundColor: '#1e1e2e',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
