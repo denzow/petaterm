@@ -9,6 +9,7 @@ export const IPC = {
   PtyExit: 'pty:exit',
   TabCwd: 'tab:cwd',
   TabActivity: 'tab:activity',
+  AppNotification: 'notification:event',
   FsList: 'fs:list',
   FsOpen: 'fs:open',
   FsContextMenu: 'fs:context-menu',
@@ -50,6 +51,20 @@ export interface TabActivityEvent {
   /** null = the Claude Code session ended; the tab's status icon disappears. */
   state: TabActivityState | null
   message: string
+}
+
+/** Notification-worthy hook events, mirrored into the in-app history. */
+export type AppNotificationKind = 'permission' | 'idle' | 'stop'
+
+export interface AppNotificationEvent {
+  tabId: string
+  kind: AppNotificationKind
+  title: string
+  message: string
+  /** Repo (or cwd) basename of the tab's session; null when unknown. */
+  source: string | null
+  /** Epoch milliseconds when the hook event was received. */
+  timestamp: number
 }
 
 export interface FsEntry {

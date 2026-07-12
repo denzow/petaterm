@@ -6,7 +6,9 @@ import { GitDiffPanel } from './components/GitDiffPanel'
 import { GitLogPanel } from './components/GitLogPanel'
 import { Settings } from './components/Settings'
 import { BookmarksModal } from './components/BookmarksModal'
+import { NotificationsModal } from './components/NotificationsModal'
 import { useTabsStore } from './stores/tabs'
+import { useNotificationsStore } from './stores/notifications'
 import { ShortcutAction, useKeybindingsStore } from './stores/keybindings'
 import { loadSession, saveSession } from './stores/session'
 
@@ -25,6 +27,7 @@ export default function App(): React.JSX.Element {
   const [panel, setPanel] = useState<MainPanel>('terminal')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [bookmarksOpen, setBookmarksOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [gitInfo, setGitInfo] = useState<{ isRepo: boolean; branch: string }>({
     isRepo: false,
     branch: ''
@@ -74,6 +77,9 @@ export default function App(): React.JSX.Element {
     const unsubExit = window.petaterm.onPtyExit(({ tabId }) => {
       useTabsStore.getState().removeTab(tabId)
     })
+    const unsubNotification = window.petaterm.onNotification((event) => {
+      useNotificationsStore.getState().add(event)
+    })
 
     // Restore the previous session's tabs (their directories) on first launch,
     // otherwise start with a single tab.
@@ -99,6 +105,7 @@ export default function App(): React.JSX.Element {
       unsubCwd()
       unsubActivity()
       unsubExit()
+      unsubNotification()
       unsubPersist()
     }
   }, [])
@@ -157,6 +164,7 @@ export default function App(): React.JSX.Element {
       <Sidebar
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenBookmarks={() => setBookmarksOpen(true)}
+        onOpenNotifications={() => setNotificationsOpen(true)}
       />
       <div className="main">
         {/* A top bar switches the main area between the terminal, the files
@@ -220,6 +228,16 @@ export default function App(): React.JSX.Element {
       </div>
       {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
       {bookmarksOpen && <BookmarksModal onClose={() => setBookmarksOpen(false)} />}
+      {notificationsOpen && (
+        <NotificationsModal
+          onClose={() => setNotificationsOpen(false)}
+          onJumpToTab={(tabId) => {
+            useTabsStore.getState().activateTab(tabId)
+            setPanel('terminal')
+            setNotificationsOpen(false)
+          }}
+        />
+      )}
     </div>
   )
 }

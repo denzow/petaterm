@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 import {
+  AppNotificationEvent,
   FsListResult,
   FsOpenResult,
   GitDiffFile,
@@ -36,6 +37,8 @@ const api = {
   onTabCwd: (cb: (payload: TabCwdEvent) => void): (() => void) => subscribe(IPC.TabCwd, cb),
   onTabActivity: (cb: (payload: TabActivityEvent) => void): (() => void) =>
     subscribe(IPC.TabActivity, cb),
+  onNotification: (cb: (payload: AppNotificationEvent) => void): (() => void) =>
+    subscribe(IPC.AppNotification, cb),
 
   fsList: (dir: string): Promise<FsListResult> => ipcRenderer.invoke(IPC.FsList, dir),
   fsOpen: (target: string): Promise<FsOpenResult> => ipcRenderer.invoke(IPC.FsOpen, target),

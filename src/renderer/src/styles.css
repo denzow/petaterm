@@ -503,6 +503,148 @@ textarea {
   width: 110px;
 }
 
+/* ---------- notifications modal ---------- */
+
+/* Unread-count badge on the sidebar's 通知 button; yellow = "wants
+   attention", matching the permission lamp. */
+.unread-badge {
+  margin-left: 5px;
+  color: var(--yellow);
+}
+
+.notifications-modal {
+  width: 560px;
+}
+
+.notif-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notif-empty {
+  padding: 24px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.notif-clear {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+.notif-clear:hover:not(:disabled) {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.notif-clear:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.notif-list {
+  max-height: 56vh;
+  overflow-y: auto;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  cursor: pointer;
+}
+
+.notif-item:hover {
+  background: var(--bg-hover);
+}
+
+.notif-item.gone {
+  cursor: default;
+}
+
+/* Same lamp language as the sidebar's tab status markers. */
+.notif-lamp {
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.notif-item.kind-permission .notif-lamp {
+  background: var(--yellow);
+  box-shadow: 0 0 6px var(--yellow);
+}
+
+.notif-item.kind-idle .notif-lamp {
+  background: var(--text-dim);
+}
+
+.notif-item.kind-stop .notif-lamp {
+  background: var(--green);
+}
+
+.notif-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.notif-source {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.notif-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notif-time {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.notif-message {
+  margin-top: 2px;
+  color: var(--text-dim);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.notif-remove {
+  visibility: hidden;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+}
+
+.notif-item:hover .notif-remove {
+  visibility: visible;
+}
+
+.notif-remove:hover {
+  color: var(--red);
+}
+
 /* ---------- git panel ---------- */
 
 .git-panel {

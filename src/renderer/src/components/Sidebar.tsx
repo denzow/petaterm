@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import { Tab, tabLabel, useTabsStore } from '../stores/tabs'
 import { useBookmarksStore } from '../stores/bookmarks'
+import { useNotificationsStore } from '../stores/notifications'
 import { formatBinding, useKeybindingsStore } from '../stores/keybindings'
 
 interface SidebarProps {
   onOpenSettings: () => void
   onOpenBookmarks: () => void
+  onOpenNotifications: () => void
 }
 
-export function Sidebar({ onOpenSettings, onOpenBookmarks }: SidebarProps): React.JSX.Element {
+export function Sidebar({
+  onOpenSettings,
+  onOpenBookmarks,
+  onOpenNotifications
+}: SidebarProps): React.JSX.Element {
   const tabs = useTabsStore((s) => s.tabs)
   const activeTabId = useTabsStore((s) => s.activeTabId)
   const addTab = useTabsStore((s) => s.addTab)
@@ -16,6 +22,7 @@ export function Sidebar({ onOpenSettings, onOpenBookmarks }: SidebarProps): Reac
   const activeCwd = tabs.find((t) => t.id === activeTabId)?.cwd ?? ''
   const activeBookmarked = useBookmarksStore((s) => s.isBookmarked(activeCwd))
   const bookmarksCombo = useKeybindingsStore((s) => formatBinding(s.bindings.openBookmarks))
+  const unreadNotifs = useNotificationsStore((s) => s.unread)
 
   return (
     <div className="sidebar">
@@ -46,6 +53,14 @@ export function Sidebar({ onOpenSettings, onOpenBookmarks }: SidebarProps): Reac
           title={`ブックマーク一覧 (${bookmarksCombo})`}
         >
           ≡ ブックマーク一覧
+        </button>
+        <button
+          className="sidebar-button"
+          onClick={onOpenNotifications}
+          title="通知一覧（全タブ共通）"
+        >
+          ⚑ 通知
+          {unreadNotifs > 0 && <span className="unread-badge">({unreadNotifs})</span>}
         </button>
         <button className="sidebar-button" onClick={onOpenSettings} title="設定">
           ⚙ 設定
