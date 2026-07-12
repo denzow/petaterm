@@ -8,19 +8,39 @@ interface Selection {
   end: number
 }
 
+/**
+ * A written-but-not-yet-sent comment. The quoted lines and range label are
+ * snapshotted at add time, so the comment stays intact (and sendable) even
+ * if the diff is refreshed and the hunk it anchored to moves or disappears.
+ */
+interface PendingComment {
+  id: number
+  filePath: string
+  hunkIndex: number
+  anchor: number // line index the comment renders under (= selection end)
+  header: string // "ファイル: path (n〜m行目)"
+  quoted: string
+  comment: string
+}
+
 interface DiffViewerProps {
   files: GitDiffFile[]
   onSend: (text: string) => void
 }
 
+let commentIdCounter = 0
+
 /**
  * Renders the working-tree diff. Clicking a line selects it (shift+click
  * extends the range within the same hunk); a comment box then lets the user
- * send the quoted lines with a comment to the tab's Claude Code session.
+ * write a comment on the quoted lines. Comments accumulate as pending (like
+ * a GitHub review) and a sticky submit bar sends them all to the tab's
+ * Claude Code session at once.
  */
 export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Element {
   const [selection, setSelection] = useState<Selection | null>(null)
   const [comment, setComment] = useState('')
+  const [pending, setPending] = useState<PendingComment[]>([])
 
   const handleLineClick = (
     filePath: string,
@@ -48,7 +68,7 @@ export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Elemen
     })
   }
 
-  const send = (file: GitDiffFile, hunk: GitDiffHunk): void => {
+  const addComment = (file: GitDiffFile, hunk: GitDiffHunk): void => {
     if (!selection || !comment.trim()) return
     const lines = hunk.lines.slice(selection.start, selection.end + 1)
     const lineNumbers = lines
@@ -61,17 +81,41 @@ export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Elemen
           ? ` (${lineNumbers[0]}行目)`
           : ` (${lineNumbers[0]}〜${lineNumbers[lineNumbers.length - 1]}行目)`
     const quoted = lines.map((l) => `> ${prefixOf(l)}${l.text}`).join('\n')
-    const text = [
-      '以下の diff についての指摘です:',
-      '',
-      `ファイル: ${file.path}${range}`,
-      quoted,
-      '',
-      `コメント: ${comment.trim()}`
-    ].join('\n')
-    onSend(text)
+    setPending((prev) => [
+      ...prev,
+      {
+        id: ++commentIdCounter,
+        filePath: file.path,
+        hunkIndex: selection.hunkIndex,
+        anchor: selection.end,
+        header: `ファイル: ${file.path}${range}`,
+        quoted,
+        comment: comment.trim()
+      }
+    ])
     setSelection(null)
     setComment('')
+  }
+
+  const removeComment = (id: number): void => {
+    setPending((prev) => prev.filter((p) => p.id !== id))
+  }
+
+  const submit = (): void => {
+    if (pending.length === 0) return
+    const sections = pending.map((p, i) =>
+      [
+        pending.length > 1 ? `【指摘 ${i + 1}】` : null,
+        p.header,
+        p.quoted,
+        '',
+        `コメント: ${p.comment}`
+      ]
+        .filter((l): l is string => l !== null)
+        .join('\n')
+    )
+    onSend(['以下の diff についての指摘です:', '', sections.join('\n\n')].join('\n'))
+    setPending([])
   }
 
   return (
@@ -120,13 +164,33 @@ export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Elemen
                         {line.text}
                       </span>
                     </div>
-                    {/* GitHub-review style: the comment box sits right under the
-                        last selected line, not at the end of the hunk. */}
+                    {/* GitHub-review style: pending comments and the comment
+                        box sit right under the last selected line, not at the
+                        end of the hunk. */}
+                    {pending
+                      .filter(
+                        (p) =>
+                          p.filePath === file.path &&
+                          p.hunkIndex === hunkIndex &&
+                          p.anchor === lineIndex
+                      )
+                      .map((p) => (
+                        <div key={p.id} className="diff-pending-comment">
+                          <span className="diff-pending-comment-text">{p.comment}</span>
+                          <button
+                            className="icon-button"
+                            title="このコメントを削除"
+                            onClick={() => removeComment(p.id)}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
                     {selected && lineIndex === selected.end && (
                       <div className="diff-comment-box">
                         <textarea
                           autoFocus
-                          placeholder="このコードへのコメント… (Claude Code に送信されます)"
+                          placeholder="このコードへのコメント… (追加して、下のバーからまとめて送信)"
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
                         />
@@ -142,9 +206,9 @@ export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Elemen
                           <button
                             className="primary"
                             disabled={!comment.trim()}
-                            onClick={() => send(file, hunk)}
+                            onClick={() => addComment(file, hunk)}
                           >
-                            Claude に送る
+                            コメントを追加
                           </button>
                         </div>
                       </div>
@@ -156,6 +220,18 @@ export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Elemen
           })}
         </div>
       ))}
+      {/* Sticky so the submit action stays reachable while scrolling a long
+          diff. Comments whose hunk disappeared on a refresh are still listed
+          here (their content is snapshotted), just no longer shown inline. */}
+      {pending.length > 0 && (
+        <div className="diff-submit-bar">
+          <span className="diff-submit-count">{pending.length} 件のコメント</span>
+          <button onClick={() => setPending([])}>全てクリア</button>
+          <button className="primary" onClick={submit}>
+            まとめて Claude に送る
+          </button>
+        </div>
+      )}
     </div>
   )
 }

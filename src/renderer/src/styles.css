@@ -1059,6 +1059,59 @@ textarea {
   cursor: default;
 }
 
+/* A written-but-unsent comment, pinned under its lines like a GitHub
+   pending review comment. */
+.diff-pending-comment {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 6px 10px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  background: var(--bg);
+  padding: 6px 8px;
+}
+
+.diff-pending-comment-text {
+  flex: 1;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.diff-submit-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-alt);
+  border-top: 1px solid var(--border);
+}
+
+.diff-submit-count {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.diff-submit-bar button {
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.diff-submit-bar button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+
 /* ---------- settings modal ---------- */
 
 .modal-backdrop {
