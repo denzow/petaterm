@@ -18,7 +18,7 @@ interface NotificationsState {
 }
 
 /** Oldest entries are dropped past this point so the list can't grow unbounded. */
-const MAX_ITEMS = 200
+const MAX_ITEMS = 30
 
 let idCounter = 0
 
