@@ -10,6 +10,7 @@ import manifest from 'material-icon-theme/dist/material-icons.json'
 const fileNames = manifest.fileNames as Record<string, string | undefined>
 const fileExtensions = manifest.fileExtensions as Record<string, string | undefined>
 const folderNames = manifest.folderNames as Record<string, string | undefined>
+const folderNamesExpanded = manifest.folderNamesExpanded as Record<string, string | undefined>
 
 // Bundle every icon and key it by name; eager so lookups stay synchronous.
 const iconUrls = import.meta.glob('../../../node_modules/material-icon-theme/icons/*.svg', {
@@ -23,11 +24,13 @@ for (const [path, url] of Object.entries(iconUrls)) {
   urlByIconName.set(path.slice(path.lastIndexOf('/') + 1, -'.svg'.length), url)
 }
 
-export function fileIconUrl(name: string, isDir: boolean): string {
+export function fileIconUrl(name: string, isDir: boolean, expanded = false): string {
   const lower = name.toLowerCase()
   let icon: string | undefined
+  let fallback: string
   if (isDir) {
-    icon = folderNames[lower]
+    icon = expanded ? folderNamesExpanded[lower] : folderNames[lower]
+    fallback = expanded ? manifest.folderExpanded : manifest.folder
   } else {
     icon = fileNames[lower]
     // "spec.ts" beats "ts": try the longest dotted suffix first.
@@ -35,7 +38,11 @@ export function fileIconUrl(name: string, isDir: boolean): string {
     for (let i = 1; icon === undefined && i < parts.length; i++) {
       icon = fileExtensions[parts.slice(i).join('.')]
     }
+    fallback = manifest.file
   }
-  const fallback = isDir ? manifest.folder : manifest.file
-  return urlByIconName.get(icon ?? fallback) ?? urlByIconName.get(fallback)!
+  return (
+    urlByIconName.get(icon ?? fallback) ??
+    urlByIconName.get(fallback) ??
+    urlByIconName.get(manifest.file)!
+  )
 }
