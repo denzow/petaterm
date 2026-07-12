@@ -14,6 +14,7 @@ export interface UiPalette {
   accent: string
   red: string
   green: string
+  yellow: string
 }
 
 export interface Theme {
@@ -36,7 +37,8 @@ export const THEMES: Theme[] = [
       textDim: '#7f849c',
       accent: '#89b4fa',
       red: '#f38ba8',
-      green: '#a6e3a1'
+      green: '#a6e3a1',
+      yellow: '#f9e2af'
     },
     terminal: {
       background: '#1e1e2e',
@@ -73,7 +75,8 @@ export const THEMES: Theme[] = [
       textDim: '#6272a4',
       accent: '#bd93f9',
       red: '#ff5555',
-      green: '#50fa7b'
+      green: '#50fa7b',
+      yellow: '#f1fa8c'
     },
     terminal: {
       background: '#282a36',
@@ -110,7 +113,8 @@ export const THEMES: Theme[] = [
       textDim: '#a89984',
       accent: '#fabd2f',
       red: '#fb4934',
-      green: '#b8bb26'
+      green: '#b8bb26',
+      yellow: '#d79921'
     },
     terminal: {
       background: '#282828',
@@ -147,7 +151,8 @@ export const THEMES: Theme[] = [
       textDim: '#93a1a1',
       accent: '#268bd2',
       red: '#dc322f',
-      green: '#859900'
+      green: '#859900',
+      yellow: '#b58900'
     },
     terminal: {
       background: '#fdf6e3',
@@ -247,6 +252,13 @@ export function applyUiPalette(palette: UiPalette): void {
   root.style.setProperty('--accent', palette.accent)
   root.style.setProperty('--red', palette.red)
   root.style.setProperty('--green', palette.green)
+  root.style.setProperty('--yellow', palette.yellow)
+}
+
+/** Push the terminal font into the UI's CSS variable — the app chrome shares
+    the terminal's monospace identity. */
+export function applyUiFont(fontFamily: string): void {
+  document.documentElement.style.setProperty('--font-mono', resolveFontFamily(fontFamily))
 }
 
 interface AppearanceState extends Persisted {
@@ -259,6 +271,7 @@ interface AppearanceState extends Persisted {
 const initial = load()
 // Apply the persisted palette immediately so the UI doesn't flash the default.
 applyUiPalette(themeByKey(initial.themeKey).ui)
+applyUiFont(initial.fontFamily)
 
 export const useAppearanceStore = create<AppearanceState>((set, get) => ({
   ...initial,
@@ -273,6 +286,7 @@ export const useAppearanceStore = create<AppearanceState>((set, get) => ({
   },
 
   setFontFamily: (fontFamily) => {
+    applyUiFont(fontFamily)
     set((s) => {
       persist({ themeKey: s.themeKey, fontFamily, fontSize: s.fontSize })
       return { fontFamily }

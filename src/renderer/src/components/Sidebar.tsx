@@ -51,9 +51,10 @@ function TabItem({ tab, active }: { tab: Tab; active: boolean }): React.JSX.Elem
       }}
       title={tab.activityMessage || tab.cwd}
     >
-      {/* Claude Code session status: shown while a session lives in this tab. */}
+      {/* Marker column: a prompt caret for a plain shell, or the Claude Code
+          session lamp (running / permission / idle) drawn by CSS. */}
       <span
-        className={`tab-badge${tab.activity === 'running' ? ' running' : ''}`}
+        className={`tab-marker${tab.activity ? ` ${tab.activity}` : ''}`}
         title={
           tab.activity === 'running'
             ? 'Claude Code 実行中'
@@ -64,13 +65,7 @@ function TabItem({ tab, active }: { tab: Tab; active: boolean }): React.JSX.Elem
                 : undefined
         }
       >
-        {tab.activity === 'running'
-          ? '✳'
-          : tab.activity === 'permission'
-            ? '🔔'
-            : tab.activity === 'idle'
-              ? '💤'
-              : ''}
+        {tab.activity ? '' : '❯'}
       </span>
       {editing ? (
         <input
