@@ -20,7 +20,8 @@ export const IPC = {
   GitLog: 'git:log',
   GitCommit: 'git:commit',
   GitUndoCommit: 'git:undo-commit',
-  GitRevert: 'git:revert'
+  GitRevert: 'git:revert',
+  HotkeySet: 'hotkey:set'
 } as const
 
 export interface PtyCreateRequest {
@@ -88,6 +89,9 @@ export interface GitOverview {
 }
 
 export type GitResult = { ok: true } | { ok: false; error: string }
+
+/** Outcome of registering the global summon hotkey (the OS grab can fail). */
+export type HotkeyRegisterResult = { ok: true } | { ok: false; error: string }
 
 export type DiffLineType = 'add' | 'del' | 'context'
 

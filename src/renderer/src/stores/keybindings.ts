@@ -11,6 +11,7 @@ export type ShortcutAction =
   | 'openNotifications'
   | 'copy'
   | 'paste'
+  | 'globalActivate'
 
 export interface KeyBinding {
   ctrl: boolean
@@ -31,10 +32,11 @@ export const ACTION_LABELS: Record<ShortcutAction, string> = {
   openBookmarks: 'ブックマーク一覧',
   openNotifications: '通知一覧',
   copy: 'コピー (ターミナル)',
-  paste: '貼り付け (ターミナル)'
+  paste: '貼り付け (ターミナル)',
+  globalActivate: 'petaterm を前面に出す / 最小化'
 }
 
-/** Action order as shown in the settings UI. */
+/** In-app actions, in settings-UI order; matched against renderer keydowns. */
 export const ACTIONS: ShortcutAction[] = [
   'newTab',
   'closeTab',
@@ -48,6 +50,11 @@ export const ACTIONS: ShortcutAction[] = [
   'paste'
 ]
 
+/** OS-level hotkeys: registered in main via globalShortcut, never matched here. */
+export const GLOBAL_ACTIONS: ShortcutAction[] = ['globalActivate']
+
+const ALL_ACTIONS: ShortcutAction[] = [...ACTIONS, ...GLOBAL_ACTIONS]
+
 const DEFAULT_BINDINGS: Record<ShortcutAction, KeyBinding> = {
   newTab: { ctrl: true, shift: true, alt: false, meta: false, key: 'T' },
   closeTab: { ctrl: true, shift: true, alt: false, meta: false, key: 'W' },
@@ -58,7 +65,8 @@ const DEFAULT_BINDINGS: Record<ShortcutAction, KeyBinding> = {
   openBookmarks: { ctrl: true, shift: true, alt: false, meta: false, key: 'B' },
   openNotifications: { ctrl: true, shift: true, alt: false, meta: false, key: 'N' },
   copy: { ctrl: true, shift: true, alt: false, meta: false, key: 'C' },
-  paste: { ctrl: true, shift: true, alt: false, meta: false, key: 'V' }
+  paste: { ctrl: true, shift: true, alt: false, meta: false, key: 'V' },
+  globalActivate: { ctrl: false, shift: false, alt: false, meta: false, key: 'F12' }
 }
 
 const STORAGE_KEY = 'petaterm.keybindings'
@@ -94,13 +102,32 @@ export function formatBinding(b: KeyBinding): string {
   return parts.join('+')
 }
 
+const ACCELERATOR_KEYS: Record<string, string> = {
+  ArrowLeft: 'Left',
+  ArrowRight: 'Right',
+  ArrowUp: 'Up',
+  ArrowDown: 'Down',
+  ' ': 'Space'
+}
+
+/** Electron accelerator string for globalShortcut.register. */
+export function toAccelerator(b: KeyBinding): string {
+  const parts: string[] = []
+  if (b.ctrl) parts.push('Ctrl')
+  if (b.shift) parts.push('Shift')
+  if (b.alt) parts.push('Alt')
+  if (b.meta) parts.push('Super')
+  parts.push(ACCELERATOR_KEYS[b.key] ?? b.key)
+  return parts.join('+')
+}
+
 function load(): Record<ShortcutAction, KeyBinding> {
   const merged = { ...DEFAULT_BINDINGS }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const stored = JSON.parse(raw) as Partial<Record<ShortcutAction, KeyBinding>>
-      for (const action of ACTIONS) {
+      for (const action of ALL_ACTIONS) {
         if (stored[action]) merged[action] = stored[action] as KeyBinding
       }
     }

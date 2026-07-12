@@ -3,6 +3,7 @@ import {
   ACTIONS,
   ACTION_LABELS,
   formatBinding,
+  GLOBAL_ACTIONS,
   normalizeKey,
   ShortcutAction,
   useKeybindingsStore
@@ -182,40 +183,45 @@ function ShortcutSettings(): React.JSX.Element {
 
   // Detect duplicate combos so the user can spot conflicts.
   const seen = new Map<string, number>()
-  for (const a of ACTIONS) {
+  for (const a of [...ACTIONS, ...GLOBAL_ACTIONS]) {
     const k = formatBinding(bindings[a])
     seen.set(k, (seen.get(k) ?? 0) + 1)
   }
 
+  const renderRow = (action: ShortcutAction): React.JSX.Element => {
+    const combo = formatBinding(bindings[action])
+    const conflict = (seen.get(combo) ?? 0) > 1
+    return (
+      <div className="keybind-row" key={action}>
+        <span className="keybind-label">{ACTION_LABELS[action]}</span>
+        <button
+          className={[
+            'keybind-combo',
+            capturing === action ? 'capturing' : '',
+            conflict ? 'conflict' : ''
+          ].join(' ')}
+          onClick={() => setCapturing(capturing === action ? null : action)}
+          title={conflict ? '他の操作と重複しています' : 'クリックして新しいキーを押す'}
+        >
+          {capturing === action ? 'キーを押す…' : combo}
+        </button>
+        <button
+          className="keybind-reset"
+          onClick={() => resetBinding(action)}
+          title="デフォルトに戻す"
+        >
+          ↺
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="shortcut-settings">
-      {ACTIONS.map((action: ShortcutAction) => {
-        const combo = formatBinding(bindings[action])
-        const conflict = (seen.get(combo) ?? 0) > 1
-        return (
-          <div className="keybind-row" key={action}>
-            <span className="keybind-label">{ACTION_LABELS[action]}</span>
-            <button
-              className={[
-                'keybind-combo',
-                capturing === action ? 'capturing' : '',
-                conflict ? 'conflict' : ''
-              ].join(' ')}
-              onClick={() => setCapturing(capturing === action ? null : action)}
-              title={conflict ? '他の操作と重複しています' : 'クリックして新しいキーを押す'}
-            >
-              {capturing === action ? 'キーを押す…' : combo}
-            </button>
-            <button
-              className="keybind-reset"
-              onClick={() => resetBinding(action)}
-              title="デフォルトに戻す"
-            >
-              ↺
-            </button>
-          </div>
-        )
-      })}
+      <div className="keybind-group-title">アプリ内</div>
+      {ACTIONS.map(renderRow)}
+      <div className="keybind-group-title">グローバル — petaterm が非アクティブでも効きます</div>
+      {GLOBAL_ACTIONS.map(renderRow)}
       <div className="settings-hint">
         割り当てるにはキー欄をクリックして希望のキーを押してください（Esc で中止）。
       </div>

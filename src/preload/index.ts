@@ -7,6 +7,7 @@ import {
   GitLogEntry,
   GitOverview,
   GitResult,
+  HotkeyRegisterResult,
   IPC,
   PtyDataEvent,
   PtyExitEvent,
@@ -56,7 +57,10 @@ const api = {
     ipcRenderer.invoke(IPC.GitCommit, cwd, message),
   gitUndoCommit: (cwd: string): Promise<GitResult> => ipcRenderer.invoke(IPC.GitUndoCommit, cwd),
   gitRevert: (cwd: string, hash: string): Promise<GitResult> =>
-    ipcRenderer.invoke(IPC.GitRevert, cwd, hash)
+    ipcRenderer.invoke(IPC.GitRevert, cwd, hash),
+
+  setGlobalHotkey: (accelerator: string | null): Promise<HotkeyRegisterResult> =>
+    ipcRenderer.invoke(IPC.HotkeySet, accelerator)
 }
 
 export type PetatermApi = typeof api

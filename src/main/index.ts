@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, shell } from 'electron'
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, shell } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import {
@@ -6,6 +6,7 @@ import {
   FsListResult,
   FsOpenResult,
   GitResult,
+  HotkeyRegisterResult,
   IPC,
   PtyCreateRequest,
   PtyDataEvent,
@@ -53,6 +54,44 @@ const notifier = new Notifier(
 const hookServer = new HookServer(socketPath, (event) => notifier.handleHookEvent(event))
 const hookInstaller = new HookInstaller()
 
+// The global summon hotkey (default F12, overridden by the renderer's
+// keybindings store via IPC once it loads). Quake-style toggle: summon the
+// window from anywhere, minimize it when it's already focused.
+let hotkeyAccelerator: string | null = null
+
+function toggleWindow(): void {
+  if (!mainWindow) {
+    createWindow()
+    return
+  }
+  if (mainWindow.isFocused()) {
+    mainWindow.minimize()
+    return
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
+}
+
+function registerHotkey(accelerator: string | null): HotkeyRegisterResult {
+  if (hotkeyAccelerator) {
+    globalShortcut.unregister(hotkeyAccelerator)
+    hotkeyAccelerator = null
+  }
+  if (!accelerator) return { ok: true }
+  try {
+    // register returns false when another app already grabs the key.
+    if (!globalShortcut.register(accelerator, toggleWindow)) {
+      return { ok: false, error: `${accelerator} を登録できません(他のアプリが使用中の可能性)` }
+    }
+  } catch (error) {
+    // Thrown for strings that aren't valid accelerators (e.g. IME keys).
+    return { ok: false, error: String(error) }
+  }
+  hotkeyAccelerator = accelerator
+  return { ok: true }
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -95,6 +134,8 @@ function registerIpcHandlers(): void {
   ipcMain.on(IPC.PtyDispose, (_e, payload: { tabId: string }) => {
     ptyManager.dispose(payload.tabId)
   })
+
+  ipcMain.handle(IPC.HotkeySet, (_e, accelerator: string | null) => registerHotkey(accelerator))
 
   // Directory listing for the files panel.
   ipcMain.handle(IPC.FsList, async (_e, dir: string): Promise<FsListResult> => {
@@ -199,6 +240,8 @@ app.whenReady().then(() => {
   hookServer.start()
   cwdTracker.start()
   createWindow()
+  // Provisional default; the renderer re-registers with the saved binding on load.
+  registerHotkey('F12')
 
   if (mainWindow) {
     void hookInstaller.promptAndInstall(mainWindow)
@@ -215,6 +258,10 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   app.quit()
+})
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
 })
 
 app.on('before-quit', () => {

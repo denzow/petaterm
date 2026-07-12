@@ -9,7 +9,7 @@ import { BookmarksModal } from './components/BookmarksModal'
 import { NotificationsModal } from './components/NotificationsModal'
 import { useTabsStore } from './stores/tabs'
 import { useNotificationsStore } from './stores/notifications'
-import { ShortcutAction, useKeybindingsStore } from './stores/keybindings'
+import { ShortcutAction, toAccelerator, useKeybindingsStore } from './stores/keybindings'
 import { loadSession, saveSession } from './stores/session'
 
 type MainPanel = 'terminal' | 'files' | 'diff' | 'log'
@@ -163,12 +163,33 @@ export default function App(): React.JSX.Element {
       if (!action) return
       // copy/paste are handled inside the focused TerminalView (they need the
       // xterm instance); elsewhere the native clipboard behavior should win.
-      if (action === 'copy' || action === 'paste') return
+      // globalActivate lives in the main process (globalShortcut) — the OS
+      // grab normally swallows the key before it ever reaches the renderer.
+      if (action === 'copy' || action === 'paste' || action === 'globalActivate') return
       e.preventDefault()
       runAction(action)
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  // Keep main's globalShortcut registration in sync with the (persisted)
+  // globalActivate binding: push it on startup and on every change.
+  useEffect(() => {
+    const register = (): void => {
+      const binding = useKeybindingsStore.getState().bindings.globalActivate
+      void window.petaterm.setGlobalHotkey(toAccelerator(binding)).then((result) => {
+        if (!result.ok) console.warn('グローバルホットキーを登録できません:', result.error)
+      })
+    }
+    register()
+    let last = useKeybindingsStore.getState().bindings.globalActivate
+    const unsub = useKeybindingsStore.subscribe((s) => {
+      if (s.bindings.globalActivate === last) return
+      last = s.bindings.globalActivate
+      register()
+    })
+    return unsub
   }, [])
 
   return (
