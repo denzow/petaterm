@@ -84,7 +84,7 @@ function TabItem({ tab, active }: { tab: Tab; active: boolean }): React.JSX.Elem
 
   return (
     <div
-      className={`tab-item${active ? ' active' : ''}`}
+      className={`tab-item${active ? ' active' : ''}${tab.attention ? ' attention' : ''}`}
       onClick={() => activateTab(tab.id)}
       onDoubleClick={() => {
         setDraft(tab.title ?? '')

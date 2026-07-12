@@ -13,6 +13,12 @@ export interface Tab {
    */
   activity: TabActivityState | null
   activityMessage: string
+  /**
+   * The session entered a waiting-on-the-user state (permission / idle) while
+   * the tab wasn't being looked at (inactive tab or unfocused window). The
+   * sidebar highlights the whole row until the tab is viewed again.
+   */
+  attention: boolean
 }
 
 interface TabsState {
@@ -27,6 +33,8 @@ interface TabsState {
   renameTab: (tabId: string, title: string | null) => void
   setCwd: (tabId: string, cwd: string) => void
   setActivity: (tabId: string, activity: TabActivityState | null, message: string) => void
+  /** Mark a waiting tab as seen (drops the sidebar highlight, keeps the lamp). */
+  clearAttention: (tabId: string) => void
 }
 
 let tabCounter = 0
@@ -48,7 +56,14 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       // New tabs inherit the cwd of the tab they're spawned from, unless an
       // explicit directory (e.g. a bookmark) is given.
       const startCwd = cwd ?? (activeIndex === -1 ? '' : s.tabs[activeIndex].cwd)
-      const tab: Tab = { id, title: null, cwd: startCwd, activity: null, activityMessage: '' }
+      const tab: Tab = {
+        id,
+        title: null,
+        cwd: startCwd,
+        activity: null,
+        activityMessage: '',
+        attention: false
+      }
       const tabs = [...s.tabs]
       // Insert right after the active tab (or at the end if there is none).
       tabs.splice(activeIndex === -1 ? tabs.length : activeIndex + 1, 0, tab)
@@ -62,7 +77,8 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       title: st.title,
       cwd: st.cwd,
       activity: null,
-      activityMessage: ''
+      activityMessage: '',
+      attention: false
     }))
     const active = tabs[activeIndex] ?? tabs[0] ?? null
     set({ tabs, activeTabId: active?.id ?? null })
@@ -83,7 +99,15 @@ export const useTabsStore = create<TabsState>((set, get) => ({
   },
 
   activateTab: (tabId) => {
-    set((s) => (s.tabs.some((t) => t.id === tabId) ? { activeTabId: tabId } : s))
+    set((s) =>
+      s.tabs.some((t) => t.id === tabId)
+        ? {
+            activeTabId: tabId,
+            // Viewing the tab acknowledges its waiting state.
+            tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, attention: false } : t))
+          }
+        : s
+    )
   },
 
   activateRelative: (offset) => {
@@ -111,11 +135,24 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       const tab = s.tabs.find((t) => t.id === tabId)
       // PreToolUse fires per tool call — skip the no-op updates.
       if (!tab || (tab.activity === activity && tab.activityMessage === message)) return s
+      // A waiting state that begins while the tab isn't being looked at
+      // (inactive tab, or the whole window unfocused) demands attention until
+      // the user views the tab; running / ended sessions never do.
+      const waiting = activity === 'permission' || activity === 'idle'
+      const unseen = tabId !== s.activeTabId || !document.hasFocus()
       return {
         tabs: s.tabs.map((t) =>
-          t.id === tabId ? { ...t, activity, activityMessage: message } : t
+          t.id === tabId
+            ? { ...t, activity, activityMessage: message, attention: waiting && unseen }
+            : t
         )
       }
     })
+  },
+
+  clearAttention: (tabId) => {
+    set((s) => ({
+      tabs: s.tabs.map((t) => (t.id === tabId && t.attention ? { ...t, attention: false } : t))
+    }))
   }
 }))

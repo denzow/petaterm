@@ -142,10 +142,30 @@ textarea {
 .tab-marker.permission::before {
   background: var(--yellow);
   box-shadow: 0 0 6px var(--yellow);
+  /* A permission request always waits on the user — keep it moving. */
+  animation: lamp-pulse 1.2s ease-in-out infinite;
 }
 
 .tab-marker.idle::before {
   background: var(--text-dim);
+}
+
+/* The session started waiting (permission / input) while the tab wasn't
+   being looked at: the whole row turns yellow — the "wants attention"
+   color — until the tab is viewed. */
+.tab-item.attention {
+  border-left-color: var(--yellow);
+  background: color-mix(in srgb, var(--yellow) 16%, transparent);
+}
+
+.tab-item.attention .tab-title {
+  color: var(--yellow);
+}
+
+.tab-item.attention .tab-marker.idle::before {
+  background: var(--yellow);
+  box-shadow: 0 0 6px var(--yellow);
+  animation: lamp-pulse 1.2s ease-in-out infinite;
 }
 
 @keyframes lamp-pulse {
@@ -159,7 +179,9 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tab-marker.running::before {
+  .tab-marker.running::before,
+  .tab-marker.permission::before,
+  .tab-item.attention .tab-marker.idle::before {
     animation: none;
   }
 }

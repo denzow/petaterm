@@ -81,6 +81,14 @@ export default function App(): React.JSX.Element {
       useNotificationsStore.getState().add(event)
     })
 
+    // Refocusing the window means the visible (active) tab has been seen —
+    // its attention highlight, if any, is acknowledged.
+    const onFocus = (): void => {
+      const { activeTabId, clearAttention } = useTabsStore.getState()
+      if (activeTabId) clearAttention(activeTabId)
+    }
+    window.addEventListener('focus', onFocus)
+
     // Restore the previous session's tabs (their directories) on first launch,
     // otherwise start with a single tab.
     if (store.tabs.length === 0) {
@@ -107,6 +115,7 @@ export default function App(): React.JSX.Element {
       unsubExit()
       unsubNotification()
       unsubPersist()
+      window.removeEventListener('focus', onFocus)
     }
   }, [])
 
