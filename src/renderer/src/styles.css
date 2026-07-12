@@ -494,6 +494,8 @@ textarea {
 
 .files-icon {
   flex-shrink: 0;
+  width: 16px;
+  height: 16px;
 }
 
 .files-name {

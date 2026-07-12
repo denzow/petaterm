@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { FsEntry } from '../../../shared/ipc'
+import { fileIconUrl } from '../file-icons'
 import { Tab } from '../stores/tabs'
 
 interface FilesPanelProps {
@@ -78,7 +79,12 @@ export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
                 }}
                 title="ダブルクリックで開く / 右クリックでメニュー"
               >
-                <span className="files-icon">{e.isDir ? '📁' : '📄'}</span>
+                <img
+                  className="files-icon"
+                  src={fileIconUrl(e.name, e.isDir)}
+                  alt=""
+                  draggable={false}
+                />
                 <span className="files-name">{e.name}</span>
                 <span className="files-size">{e.isDir ? '' : formatSize(e.size)}</span>
                 <span className="files-mtime">{formatMtime(e.mtime)}</span>
