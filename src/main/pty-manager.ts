@@ -22,18 +22,24 @@ export class PtyManager {
     const shell = process.env.SHELL || '/bin/bash'
     // A restored cwd may no longer exist — fall back to home rather than crash.
     const startDir = cwd && this.isDir(cwd) ? cwd : os.homedir()
+    const env: Record<string, string> = {
+      ...(process.env as Record<string, string>),
+      TERM: 'xterm-256color',
+      COLORTERM: 'truecolor',
+      PETATERM_TAB_ID: tabId,
+      PETATERM_SOCKET: this.socketPath
+    }
+    // petaterm's own runtime markers must not leak into user shells: an
+    // inherited NODE_ENV=production makes npm silently omit devDependencies
+    // on install, wrecking node_modules of whatever repo the tab is in.
+    delete env.NODE_ENV
+    delete env.NODE_ENV_ELECTRON_VITE
     const proc = pty.spawn(shell, [], {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,
       cwd: startDir,
-      env: {
-        ...(process.env as Record<string, string>),
-        TERM: 'xterm-256color',
-        COLORTERM: 'truecolor',
-        PETATERM_TAB_ID: tabId,
-        PETATERM_SOCKET: this.socketPath
-      }
+      env
     })
 
     proc.onData((data) => {
