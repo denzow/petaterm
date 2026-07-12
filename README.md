@@ -39,6 +39,14 @@ npm run install-desktop
 
 再実行しても安全です。`resources/icon.png` / `icon.svg` を変更したときやリポジトリを移動したときは再実行してください。AppImage(`npm run package`)にはアイコンが同梱されるので、この手順は不要です。
 
+### ログイン時の自動起動
+
+```bash
+npm run install-autostart
+```
+
+`~/.config/autostart/petaterm.desktop` を作成し、次回ログインから petaterm が自動起動します。やめるときはこのファイルを削除してください。グローバルホットキー(デフォルト F12)と組み合わせると、ログイン後いつでも一発で呼び出せます。
+
 ## キーボードショートカット
 
 | 操作 | キー |
@@ -60,6 +68,7 @@ npm run install-desktop
 | `npm run typecheck` | 型チェック |
 | `npm run package` | AppImage をビルド(electron-builder) |
 | `npm run install-desktop` | ~/.local/share にデスクトップエントリとアイコンをインストール |
+| `npm run install-autostart` | ログイン時の自動起動を設定 (~/.config/autostart) |
 
 ## 技術構成
 
