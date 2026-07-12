@@ -20,6 +20,9 @@ function subscribe<T>(channel: string, callback: (payload: T) => void): () => vo
 }
 
 const api = {
+  /** The user's home directory, for ~ expansion/abbreviation in the renderer. */
+  homeDir: process.env.HOME ?? '',
+
   ptyCreate: (tabId: string, cwd?: string): Promise<void> =>
     ipcRenderer.invoke(IPC.PtyCreate, { tabId, cwd }),
   ptyWrite: (tabId: string, data: string): void =>

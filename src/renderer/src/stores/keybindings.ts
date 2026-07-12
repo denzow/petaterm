@@ -7,6 +7,7 @@ export type ShortcutAction =
   | 'panelRight'
   | 'prevTab'
   | 'nextTab'
+  | 'openBookmarks'
   | 'copy'
   | 'paste'
 
@@ -26,6 +27,7 @@ export const ACTION_LABELS: Record<ShortcutAction, string> = {
   panelRight: '右のパネルへ',
   prevTab: '前のセッションタブ',
   nextTab: '次のセッションタブ',
+  openBookmarks: 'ブックマーク一覧',
   copy: 'コピー (ターミナル)',
   paste: '貼り付け (ターミナル)'
 }
@@ -38,6 +40,7 @@ export const ACTIONS: ShortcutAction[] = [
   'panelRight',
   'prevTab',
   'nextTab',
+  'openBookmarks',
   'copy',
   'paste'
 ]
@@ -49,6 +52,7 @@ const DEFAULT_BINDINGS: Record<ShortcutAction, KeyBinding> = {
   panelRight: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowRight' },
   prevTab: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowUp' },
   nextTab: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowDown' },
+  openBookmarks: { ctrl: true, shift: true, alt: false, meta: false, key: 'B' },
   copy: { ctrl: true, shift: true, alt: false, meta: false, key: 'C' },
   paste: { ctrl: true, shift: true, alt: false, meta: false, key: 'V' }
 }

@@ -212,6 +212,121 @@ textarea {
   padding: 2px 4px;
 }
 
+/* Bookmarked directories: a palette-style modal with incremental search;
+   picking an entry spawns a new session tab in that directory. */
+.bookmarks-modal {
+  align-self: flex-start;
+  margin-top: 12vh;
+}
+
+.bookmarks-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bookmarks-search-icon {
+  color: var(--yellow);
+  font-size: 13px;
+}
+
+.bookmarks-search-input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 14px;
+  font-family: var(--font-mono);
+}
+
+.bookmarks-search-input::placeholder {
+  color: var(--text-dim);
+}
+
+.bookmarks-list {
+  max-height: 40vh;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.bookmark-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 10px;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bookmark-item:hover,
+.bookmark-item.selected {
+  background: var(--bg-hover);
+}
+
+.bookmark-item.selected {
+  border-left-color: var(--accent);
+}
+
+.bookmarks-empty {
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 14px 12px;
+}
+
+.bookmark-marker {
+  width: 14px;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--yellow);
+  font-size: 11px;
+}
+
+.bookmark-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.bookmark-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.bookmark-path {
+  color: var(--text-dim);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookmark-remove {
+  visibility: hidden;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+}
+
+.bookmark-item:hover .bookmark-remove,
+.bookmark-item.selected .bookmark-remove {
+  visibility: visible;
+}
+
+.bookmark-remove:hover {
+  color: var(--red);
+}
+
 .sidebar-footer {
   padding: 4px;
   border-top: 1px solid var(--border);

@@ -5,6 +5,7 @@ import { FilesPanel } from './components/FilesPanel'
 import { GitDiffPanel } from './components/GitDiffPanel'
 import { GitLogPanel } from './components/GitLogPanel'
 import { Settings } from './components/Settings'
+import { BookmarksModal } from './components/BookmarksModal'
 import { useTabsStore } from './stores/tabs'
 import { ShortcutAction, useKeybindingsStore } from './stores/keybindings'
 import { loadSession, saveSession } from './stores/session'
@@ -23,6 +24,7 @@ export default function App(): React.JSX.Element {
   const activeTabId = useTabsStore((s) => s.activeTabId)
   const [panel, setPanel] = useState<MainPanel>('terminal')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [bookmarksOpen, setBookmarksOpen] = useState(false)
   const [gitInfo, setGitInfo] = useState<{ isRepo: boolean; branch: string }>({
     isRepo: false,
     branch: ''
@@ -130,6 +132,9 @@ export default function App(): React.JSX.Element {
         case 'nextTab':
           store.activateRelative(1)
           break
+        case 'openBookmarks':
+          setBookmarksOpen((open) => !open)
+          break
       }
     }
     const handler = (e: KeyboardEvent): void => {
@@ -149,7 +154,10 @@ export default function App(): React.JSX.Element {
 
   return (
     <div className="app">
-      <Sidebar onOpenSettings={() => setSettingsOpen(true)} />
+      <Sidebar
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenBookmarks={() => setBookmarksOpen(true)}
+      />
       <div className="main">
         {/* A top bar switches the main area between the terminal, the files
             panel, and (when the cwd is a git repo) the two Git panels. */}
@@ -211,6 +219,7 @@ export default function App(): React.JSX.Element {
         </div>
       </div>
       {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
+      {bookmarksOpen && <BookmarksModal onClose={() => setBookmarksOpen(false)} />}
     </div>
   )
 }

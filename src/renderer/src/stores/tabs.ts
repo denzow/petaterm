@@ -18,7 +18,8 @@ export interface Tab {
 interface TabsState {
   tabs: Tab[]
   activeTabId: string | null
-  addTab: () => void
+  /** cwd omitted → the new tab inherits the active tab's directory. */
+  addTab: (cwd?: string) => void
   restoreTabs: (saved: { cwd: string; title: string | null }[], activeIndex: number) => void
   removeTab: (tabId: string) => void
   activateTab: (tabId: string) => void
@@ -40,13 +41,14 @@ export const useTabsStore = create<TabsState>((set, get) => ({
   tabs: [],
   activeTabId: null,
 
-  addTab: () => {
+  addTab: (cwd) => {
     const id = `tab-${Date.now().toString(36)}-${++tabCounter}`
     set((s) => {
       const activeIndex = s.tabs.findIndex((t) => t.id === s.activeTabId)
-      // New tabs inherit the cwd of the tab they're spawned from.
-      const inheritedCwd = activeIndex === -1 ? '' : s.tabs[activeIndex].cwd
-      const tab: Tab = { id, title: null, cwd: inheritedCwd, activity: null, activityMessage: '' }
+      // New tabs inherit the cwd of the tab they're spawned from, unless an
+      // explicit directory (e.g. a bookmark) is given.
+      const startCwd = cwd ?? (activeIndex === -1 ? '' : s.tabs[activeIndex].cwd)
+      const tab: Tab = { id, title: null, cwd: startCwd, activity: null, activityMessage: '' }
       const tabs = [...s.tabs]
       // Insert right after the active tab (or at the end if there is none).
       tabs.splice(activeIndex === -1 ? tabs.length : activeIndex + 1, 0, tab)

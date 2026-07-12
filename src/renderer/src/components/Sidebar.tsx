@@ -1,14 +1,21 @@
 import { useState } from 'react'
 import { Tab, tabLabel, useTabsStore } from '../stores/tabs'
+import { useBookmarksStore } from '../stores/bookmarks'
+import { formatBinding, useKeybindingsStore } from '../stores/keybindings'
 
 interface SidebarProps {
   onOpenSettings: () => void
+  onOpenBookmarks: () => void
 }
 
-export function Sidebar({ onOpenSettings }: SidebarProps): React.JSX.Element {
+export function Sidebar({ onOpenSettings, onOpenBookmarks }: SidebarProps): React.JSX.Element {
   const tabs = useTabsStore((s) => s.tabs)
   const activeTabId = useTabsStore((s) => s.activeTabId)
   const addTab = useTabsStore((s) => s.addTab)
+  const toggleBookmark = useBookmarksStore((s) => s.toggleBookmark)
+  const activeCwd = tabs.find((t) => t.id === activeTabId)?.cwd ?? ''
+  const activeBookmarked = useBookmarksStore((s) => s.isBookmarked(activeCwd))
+  const bookmarksCombo = useKeybindingsStore((s) => formatBinding(s.bindings.openBookmarks))
 
   return (
     <div className="sidebar">
@@ -18,8 +25,27 @@ export function Sidebar({ onOpenSettings }: SidebarProps): React.JSX.Element {
         ))}
       </div>
       <div className="sidebar-footer">
-        <button className="sidebar-button" onClick={addTab} title="新しいセッションタブ">
+        <button className="sidebar-button" onClick={() => addTab()} title="新しいセッションタブ">
           ＋ 新しいセッションタブ
+        </button>
+        <button
+          className={`sidebar-button${activeBookmarked ? ' active' : ''}`}
+          onClick={() => toggleBookmark(activeCwd)}
+          disabled={!activeCwd}
+          title={
+            activeBookmarked
+              ? 'このディレクトリのブックマークを解除'
+              : '現在のディレクトリをブックマーク'
+          }
+        >
+          {activeBookmarked ? '★ ブックマーク済み' : '☆ ディレクトリをブックマーク'}
+        </button>
+        <button
+          className="sidebar-button"
+          onClick={onOpenBookmarks}
+          title={`ブックマーク一覧 (${bookmarksCombo})`}
+        >
+          ≡ ブックマーク一覧
         </button>
         <button className="sidebar-button" onClick={onOpenSettings} title="設定">
           ⚙ 設定
