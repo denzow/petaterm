@@ -207,6 +207,10 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  // Focusing the window acknowledges the pending desktop notifications: they
+  // leave the OS notification list, which also clears the dock's unread badge.
+  app.on('browser-window-focus', () => notifier.closeAll())
 })
 
 app.on('window-all-closed', () => {

@@ -15,6 +15,10 @@ import { HookEvent } from './hook-server'
  * running / permission / idle transitions, and only disappears on SessionEnd.
  */
 export class Notifier {
+  /** Live desktop notifications per tab, so they can be closed (removed from
+      the OS notification list — and the dock badge) once acknowledged. */
+  private shown = new Map<string, Notification[]>()
+
   constructor(
     private getWindow: () => BrowserWindow | null,
     /** Repo (or cwd) name identifying where the tab's session runs. */
@@ -25,6 +29,9 @@ export class Notifier {
     const mapped = this.mapState(event)
     if (!mapped) return
     const { state, title, kind } = mapped
+
+    // The session resumed (or ended) — its waiting notifications are obsolete.
+    if (state === 'running' || state === null) this.closeFor(event.tabId)
 
     const win = this.getWindow()
     const payload: TabActivityEvent = {
@@ -67,13 +74,37 @@ export class Notifier {
       body: truncate(event.message ?? '', 120)
     })
     notification.on('click', () => {
+      notification.close()
       const w = this.getWindow()
       if (!w) return
       if (w.isMinimized()) w.restore()
       w.show()
       w.focus()
     })
+    this.track(event.tabId, notification)
     notification.show()
+  }
+
+  /** Close every live notification — the window was focused, the user is looking. */
+  closeAll(): void {
+    for (const tabId of [...this.shown.keys()]) this.closeFor(tabId)
+  }
+
+  private closeFor(tabId: string): void {
+    const list = this.shown.get(tabId)
+    if (!list) return
+    this.shown.delete(tabId)
+    for (const n of list) n.close()
+  }
+
+  private track(tabId: string, notification: Notification): void {
+    this.shown.set(tabId, [...(this.shown.get(tabId) ?? []), notification])
+    // Also fires when the user dismisses it — drop the reference either way.
+    notification.on('close', () => {
+      const rest = (this.shown.get(tabId) ?? []).filter((n) => n !== notification)
+      if (rest.length === 0) this.shown.delete(tabId)
+      else this.shown.set(tabId, rest)
+    })
   }
 
   private mapState(

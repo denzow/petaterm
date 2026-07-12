@@ -151,6 +151,9 @@ export default function App(): React.JSX.Element {
         case 'openBookmarks':
           setBookmarksOpen((open) => !open)
           break
+        case 'openNotifications':
+          setNotificationsOpen((open) => !open)
+          break
       }
     }
     const handler = (e: KeyboardEvent): void => {
