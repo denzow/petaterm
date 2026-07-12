@@ -65,6 +65,12 @@ export default function App(): React.JSX.Element {
     if (!gitInfo.isRepo) setPanel((p) => (p === 'diff' || p === 'log' ? 'terminal' : p))
   }, [gitInfo.isRepo])
 
+  // Switching session tabs always lands on the terminal — the previous tab's
+  // panel choice (diff / log / files) shouldn't leak into the next tab.
+  useEffect(() => {
+    setPanel('terminal')
+  }, [activeTabId])
+
   // Global IPC listeners (registered once).
   useEffect(() => {
     const store = useTabsStore.getState()
