@@ -17,13 +17,16 @@ interface TreeControl {
   toggleDir: (path: string) => void
   focused: string | null
   setFocused: (path: string) => void
+  /** Incremental filter, normalized (trimmed, lowercase); '' = no filter. */
+  filter: string
 }
 
 const TreeContext = createContext<TreeControl>({
   expanded: new Set(),
   toggleDir: () => {},
   focused: null,
-  setFocused: () => {}
+  setFocused: () => {},
+  filter: ''
 })
 
 /**
@@ -31,7 +34,8 @@ const TreeContext = createContext<TreeControl>({
  * automatically (tab.cwd is kept current by cwd-tracker). Clicking a
  * directory expands its children inline; files open with the OS default app
  * on double-click. Keyboard: ↑/↓ move, →/← expand/collapse (← on a leaf
- * jumps to the parent), Enter opens.
+ * jumps to the parent), Enter opens, any printable key starts the
+ * incremental name filter (Esc clears it).
  */
 export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
   const [error, setError] = useState('')
@@ -39,7 +43,9 @@ export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
   const [refreshKey, setRefreshKey] = useState(0)
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
   const [focused, setFocused] = useState<string | null>(null)
+  const [filter, setFilter] = useState('')
   const areaRef = useRef<HTMLDivElement>(null)
+  const filterRef = useRef<HTMLInputElement>(null)
 
   const refresh = (): void => {
     setError('')
@@ -52,6 +58,7 @@ export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
   useEffect(() => {
     setExpanded(new Set())
     setFocused(null)
+    setFilter('')
   }, [tab.cwd])
 
   // Keys should work the moment the panel is opened, without a click first.
@@ -119,9 +126,24 @@ export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
           })
         break
       default:
+        // Type-to-filter: a printable key moves focus to the filter input
+        // before the text lands, so the character starts the filter.
+        if (e.key.length === 1) filterRef.current?.focus()
         return
     }
     e.preventDefault()
+  }
+
+  // Hand focus back to the tree; make sure some visible row carries the
+  // keyboard cursor (filtering may have removed the previous one).
+  const focusTree = (): void => {
+    const area = areaRef.current
+    if (!area) return
+    area.focus()
+    const rows = [...area.querySelectorAll<HTMLElement>('.files-item[data-path]')]
+    if (!rows.some((r) => r.dataset.path === focused) && rows[0]?.dataset.path) {
+      setFocused(rows[0].dataset.path)
+    }
   }
 
   return (
@@ -131,6 +153,30 @@ export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
         <span className="git-panel-cwd" title={tab.cwd}>
           {tab.cwd.replace(/^\/home\/[^/]+/, '~')}
         </span>
+        <input
+          ref={filterRef}
+          className="files-filter"
+          value={filter}
+          placeholder="絞り込み"
+          title="名前の部分一致で絞り込み / Escでクリア"
+          onChange={(e) => setFilter(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setFilter('')
+              focusTree()
+            } else if (e.key === 'Enter' || e.key === 'ArrowDown') {
+              focusTree()
+            } else {
+              return
+            }
+            e.preventDefault()
+          }}
+        />
+        {filter && (
+          <button className="icon-button" onClick={() => { setFilter(''); focusTree() }} title="絞り込みをクリア">
+            ×
+          </button>
+        )}
         <button className="icon-button" onClick={refresh} title="更新">
           ⟳
         </button>
@@ -143,11 +189,13 @@ export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
         ref={areaRef}
         tabIndex={0}
         onKeyDown={onKeyDown}
-        title="↑↓で移動 / →←で開閉 / Enterで開く"
+        title="↑↓で移動 / →←で開閉 / Enterで開く / 文字入力で絞り込み"
       >
         <div className="files-list">
           {tab.cwd && (
-            <TreeContext.Provider value={{ expanded, toggleDir, focused, setFocused }}>
+            <TreeContext.Provider
+              value={{ expanded, toggleDir, focused, setFocused, filter: filter.trim().toLowerCase() }}
+            >
               <DirChildren dir={tab.cwd} depth={0} refreshKey={refreshKey} onError={setError} />
             </TreeContext.Provider>
           )}
@@ -165,6 +213,7 @@ interface DirChildrenProps {
 }
 
 function DirChildren({ dir, depth, refreshKey, onError }: DirChildrenProps): React.JSX.Element {
+  const { expanded, filter } = useContext(TreeContext)
   const [entries, setEntries] = useState<FsEntry[] | null>(null)
   const [listError, setListError] = useState('')
 
@@ -215,9 +264,24 @@ function DirChildren({ dir, depth, refreshKey, onError }: DirChildrenProps): Rea
     a.isDir !== b.isDir ? (a.isDir ? -1 : 1) : a.name.localeCompare(b.name, 'ja')
   )
 
+  // Filtering: name substring match. Expanded directories stay visible even
+  // without a match — they are the path to deeper matches (rendered dimmed).
+  const visible = filter
+    ? sorted.filter(
+        (e) => e.name.toLowerCase().includes(filter) || (e.isDir && expanded.has(`${dir}/${e.name}`))
+      )
+    : sorted
+  if (visible.length === 0) {
+    return (
+      <div className="files-note" style={indent}>
+        (一致なし)
+      </div>
+    )
+  }
+
   return (
     <>
-      {sorted.map((e) => (
+      {visible.map((e) => (
         // Keyed by full path so rows reset when the tree follows the shell
         // into a different directory.
         <EntryRow
@@ -242,9 +306,11 @@ interface EntryRowProps {
 }
 
 function EntryRow({ dir, entry, depth, refreshKey, onError }: EntryRowProps): React.JSX.Element {
-  const { expanded, toggleDir, focused, setFocused } = useContext(TreeContext)
+  const { expanded, toggleDir, focused, setFocused, filter } = useContext(TreeContext)
   const path = `${dir}/${entry.name}`
   const open = entry.isDir && expanded.has(path)
+  // Visible only as the path to deeper matches, not a match itself.
+  const dim = filter !== '' && !entry.name.toLowerCase().includes(filter)
 
   const openEntry = async (): Promise<void> => {
     // Files open with the configured app (extension or MIME match) when
@@ -257,7 +323,7 @@ function EntryRow({ dir, entry, depth, refreshKey, onError }: EntryRowProps): Re
   return (
     <>
       <div
-        className={`files-item${entry.isDir ? ' dir' : ''}${focused === path ? ' focused' : ''}`}
+        className={`files-item${entry.isDir ? ' dir' : ''}${focused === path ? ' focused' : ''}${dim ? ' dim' : ''}`}
         style={{ paddingLeft: `${10 + depth * 16}px` }}
         data-path={path}
         data-isdir={entry.isDir ? '1' : '0'}
