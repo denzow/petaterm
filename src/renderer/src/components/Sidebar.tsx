@@ -10,6 +10,16 @@ interface SidebarProps {
   onOpenNotifications: () => void
 }
 
+const WIDTH_KEY = 'petaterm.sidebarWidth'
+const DEFAULT_WIDTH = 230
+const MIN_WIDTH = 140
+const MAX_WIDTH = 500
+
+function loadWidth(): number {
+  const raw = Number(localStorage.getItem(WIDTH_KEY))
+  return Number.isFinite(raw) && raw >= MIN_WIDTH && raw <= MAX_WIDTH ? raw : DEFAULT_WIDTH
+}
+
 export function Sidebar({
   onOpenSettings,
   onOpenBookmarks,
@@ -23,9 +33,41 @@ export function Sidebar({
   const activeBookmarked = useBookmarksStore((s) => s.isBookmarked(activeCwd))
   const bookmarksCombo = useKeybindingsStore((s) => formatBinding(s.bindings.openBookmarks))
   const unreadNotifs = useNotificationsStore((s) => s.unread)
+  const [width, setWidth] = useState(loadWidth)
+
+  // Pointer capture keeps the drag alive even when the cursor crosses into
+  // the xterm canvas; the terminals refit themselves via ResizeObserver.
+  const onResizeStart = (e: React.PointerEvent<HTMLDivElement>): void => {
+    e.preventDefault()
+    const handle = e.currentTarget
+    try {
+      handle.setPointerCapture(e.pointerId)
+    } catch {
+      // No capturable pointer (e.g. the pointer was already released) —
+      // the drag still works while the cursor stays on the handle.
+    }
+    // The sidebar's left edge is the window's left edge, so clientX is the width.
+    const onMove = (ev: PointerEvent): void =>
+      setWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, ev.clientX)))
+    const onUp = (): void => {
+      handle.removeEventListener('pointermove', onMove)
+      handle.removeEventListener('pointerup', onUp)
+      setWidth((w) => {
+        localStorage.setItem(WIDTH_KEY, String(w))
+        return w
+      })
+    }
+    handle.addEventListener('pointermove', onMove)
+    handle.addEventListener('pointerup', onUp)
+  }
+
+  const resetWidth = (): void => {
+    setWidth(DEFAULT_WIDTH)
+    localStorage.setItem(WIDTH_KEY, String(DEFAULT_WIDTH))
+  }
 
   return (
-    <div className="sidebar">
+    <div className="sidebar" style={{ width }}>
       <div className="sidebar-tabs">
         {tabs.map((tab) => (
           <TabItem key={tab.id} tab={tab} active={tab.id === activeTabId} />
@@ -66,6 +108,12 @@ export function Sidebar({
           ⚙ 設定
         </button>
       </div>
+      <div
+        className="sidebar-resizer"
+        onPointerDown={onResizeStart}
+        onDoubleClick={resetWidth}
+        title="ドラッグで幅を変更 / ダブルクリックで既定幅に戻す"
+      />
     </div>
   )
 }

@@ -74,12 +74,30 @@ textarea {
 /* ---------- sidebar ---------- */
 
 .sidebar {
+  /* Width is user-resizable: driven by an inline style, persisted by Sidebar. */
   width: 230px;
-  min-width: 230px;
+  flex-shrink: 0;
+  position: relative;
   background: var(--bg-alt);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
+}
+
+/* Invisible grab strip straddling the sidebar's right border. */
+.sidebar-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.sidebar-resizer:hover {
+  background: var(--accent);
+  opacity: 0.4;
 }
 
 .sidebar-tabs {
