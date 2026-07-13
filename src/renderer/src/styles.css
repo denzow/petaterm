@@ -1378,6 +1378,86 @@ textarea {
   border-color: var(--accent);
 }
 
+/* ---------- file opener settings ---------- */
+
+.file-opener-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.file-opener-ext {
+  width: 110px;
+  min-width: 0;
+}
+
+.file-opener-ext.conflict {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.file-opener-app {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-combobox {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.app-combobox-button {
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-combobox-button.placeholder {
+  color: var(--text-dim);
+}
+
+.app-combobox-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.app-combobox-item {
+  padding: 5px 8px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-combobox-item.selected {
+  background: var(--bg-hover);
+  color: var(--accent);
+}
+
+.app-combobox-empty {
+  padding: 5px 8px;
+  color: var(--text-dim);
+}
+
+/* The footer button style works here, but keep it from stretching. */
+.file-opener-settings .sidebar-button {
+  width: auto;
+  margin-top: 4px;
+}
+
 .theme-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

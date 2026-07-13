@@ -12,6 +12,8 @@ export const IPC = {
   AppNotification: 'notification:event',
   FsList: 'fs:list',
   FsOpen: 'fs:open',
+  FsOpenWith: 'fs:open-with',
+  FsListApps: 'fs:list-apps',
   FsContextMenu: 'fs:context-menu',
   GitOverview: 'git:overview',
   GitCheckout: 'git:checkout',
@@ -80,6 +82,13 @@ export interface FsEntry {
 export type FsListResult = { ok: true; entries: FsEntry[] } | { ok: false; error: string }
 
 export type FsOpenResult = { ok: true } | { ok: false; error: string }
+
+/** An installed desktop application, selectable as a per-extension opener. */
+export interface FsAppInfo {
+  name: string
+  /** Absolute path to the .desktop file — the stable id stored in settings. */
+  desktopFile: string
+}
 
 export interface GitOverview {
   isRepo: boolean

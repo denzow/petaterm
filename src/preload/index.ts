@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 import {
   AppNotificationEvent,
+  FsAppInfo,
   FsListResult,
   FsOpenResult,
   GitDiffFile,
@@ -43,8 +44,11 @@ const api = {
 
   fsList: (dir: string): Promise<FsListResult> => ipcRenderer.invoke(IPC.FsList, dir),
   fsOpen: (target: string): Promise<FsOpenResult> => ipcRenderer.invoke(IPC.FsOpen, target),
-  fsContextMenu: (target: string, x: number, y: number): Promise<void> =>
-    ipcRenderer.invoke(IPC.FsContextMenu, target, x, y),
+  fsOpenWith: (desktopFile: string, target: string): Promise<FsOpenResult> =>
+    ipcRenderer.invoke(IPC.FsOpenWith, desktopFile, target),
+  fsListApps: (): Promise<FsAppInfo[]> => ipcRenderer.invoke(IPC.FsListApps),
+  fsContextMenu: (target: string, x: number, y: number, openerFile?: string): Promise<void> =>
+    ipcRenderer.invoke(IPC.FsContextMenu, target, x, y, openerFile),
 
   gitOverview: (cwd: string): Promise<GitOverview> => ipcRenderer.invoke(IPC.GitOverview, cwd),
   gitCheckout: (cwd: string, branch: string): Promise<GitResult> =>

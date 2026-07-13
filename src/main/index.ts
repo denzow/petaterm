@@ -2,6 +2,7 @@ import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, shell }
 import fs from 'node:fs'
 import path from 'node:path'
 import {
+  FsAppInfo,
   FsEntry,
   FsListResult,
   FsOpenResult,
@@ -170,9 +171,26 @@ function registerIpcHandlers(): void {
     return error ? { ok: false, error } : { ok: true }
   })
 
+  // Open a file with a specific application (the per-extension opener the
+  // user configured in settings).
+  ipcMain.handle(IPC.FsOpenWith, (_e, desktopFile: string, target: string): FsOpenResult => {
+    // The app may have been uninstalled since it was configured.
+    if (!fs.existsSync(desktopFile)) {
+      return { ok: false, error: `アプリが見つかりません: ${path.basename(desktopFile)}` }
+    }
+    launchWith(desktopFile, target)
+    return { ok: true }
+  })
+
+  // Installed applications, for the extension→app settings UI.
+  ipcMain.handle(IPC.FsListApps, (): FsAppInfo[] =>
+    listAllApps(app.getLocale()).map(({ name, desktopFile }) => ({ name, desktopFile }))
+  )
+
   // Right-click menu for a files-panel entry: default open, open-with app
-  // list (from the target's MIME type), reveal in file manager.
-  ipcMain.handle(IPC.FsContextMenu, async (e, target: string, x: number, y: number): Promise<void> => {
+  // list (from the target's MIME type), reveal in file manager. openerFile
+  // is the configured per-extension opener; it takes over the default open.
+  ipcMain.handle(IPC.FsContextMenu, async (e, target: string, x: number, y: number, openerFile?: string): Promise<void> => {
     const win = BrowserWindow.fromWebContents(e.sender) ?? mainWindow
     if (!win) return
     const locale = app.getLocale()
@@ -189,7 +207,13 @@ function registerIpcHandlers(): void {
       click: (): void => launchWith(a.desktopFile, target)
     })
     const menu = Menu.buildFromTemplate([
-      { label: '開く', click: () => void shell.openPath(target) },
+      {
+        label: '開く',
+        click: (): void => {
+          if (openerFile && fs.existsSync(openerFile)) launchWith(openerFile, target)
+          else void shell.openPath(target)
+        }
+      },
       {
         label: 'アプリケーションで開く',
         submenu: [

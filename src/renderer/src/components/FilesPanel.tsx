@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { FsEntry } from '../../../shared/ipc'
 import { fileIconUrl } from '../file-icons'
+import { openerFor, openFile, useFileOpenersStore } from '../stores/file-openers'
 import { Tab } from '../stores/tabs'
 
 interface FilesPanelProps {
@@ -113,7 +114,7 @@ export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
         if (!path) return
         if (isDir) toggleDir(path)
         else
-          void window.petaterm.fsOpen(path).then((result) => {
+          void openFile(path).then((result) => {
             setError(result.ok ? '' : result.error)
           })
         break
@@ -245,9 +246,10 @@ function EntryRow({ dir, entry, depth, refreshKey, onError }: EntryRowProps): Re
   const path = `${dir}/${entry.name}`
   const open = entry.isDir && expanded.has(path)
 
-  const openWithOS = async (): Promise<void> => {
-    // Files open in the OS default app; directories open in the file manager.
-    const result = await window.petaterm.fsOpen(path)
+  const openEntry = async (): Promise<void> => {
+    // Files open with the configured per-extension app when there is one,
+    // otherwise the OS default; directories open in the file manager.
+    const result = await openFile(path)
     onError(result.ok ? '' : result.error)
   }
 
@@ -263,12 +265,16 @@ function EntryRow({ dir, entry, depth, refreshKey, onError }: EntryRowProps): Re
           if (entry.isDir) toggleDir(path)
         }}
         onDoubleClick={() => {
-          if (!entry.isDir) void openWithOS()
+          if (!entry.isDir) void openEntry()
         }}
         onContextMenu={(ev) => {
           ev.preventDefault()
           setFocused(path)
-          void window.petaterm.fsContextMenu(path, ev.clientX, ev.clientY)
+          // The menu's 開く honors the configured opener like double-click does.
+          const opener = entry.isDir
+            ? null
+            : openerFor(entry.name, useFileOpenersStore.getState().openers)
+          void window.petaterm.fsContextMenu(path, ev.clientX, ev.clientY, opener?.desktopFile)
         }}
         title={
           entry.isDir
