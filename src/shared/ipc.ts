@@ -14,6 +14,8 @@ export const IPC = {
   FsOpen: 'fs:open',
   FsOpenWith: 'fs:open-with',
   FsListApps: 'fs:list-apps',
+  FsMime: 'fs:mime',
+  FsListMimeTypes: 'fs:list-mime-types',
   FsContextMenu: 'fs:context-menu',
   GitOverview: 'git:overview',
   GitCheckout: 'git:checkout',

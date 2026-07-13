@@ -179,16 +179,58 @@ function mimeChain(mime: string): string[] {
 }
 
 /**
+ * Every MIME type known to shared-mime-info (each `<type>/<subtype>.xml`
+ * under the mime dirs), plus a `<type>/*` wildcard per media type, sorted.
+ * Feeds the settings UI's pattern completion.
+ */
+export function listMimeTypes(): string[] {
+  const types = new Set<string>()
+  for (const dir of MIME_DIRS) {
+    let mediaTypes: fs.Dirent[]
+    try {
+      mediaTypes = fs.readdirSync(dir, { withFileTypes: true })
+    } catch {
+      continue
+    }
+    for (const media of mediaTypes) {
+      // Real media types are directories; `packages` holds definition
+      // sources, not types.
+      if (!media.isDirectory() || media.name === 'packages') continue
+      let files: string[]
+      try {
+        files = fs.readdirSync(path.join(dir, media.name))
+      } catch {
+        continue
+      }
+      for (const file of files) {
+        if (!file.endsWith('.xml')) continue
+        types.add(`${media.name}/${file.slice(0, -4)}`)
+        types.add(`${media.name}/*`)
+      }
+    }
+  }
+  // "*" sorts before letters, so each media type's wildcard leads its group.
+  return [...types].sort()
+}
+
+/**
+ * The target's MIME type plus its ancestors, most specific first; [] when
+ * xdg-mime can't identify the file.
+ */
+export async function mimeTypesFor(target: string): Promise<string[]> {
+  const mime = (await run('xdg-mime', ['query', 'filetype', target])).trim()
+  return mime ? mimeChain(mime) : []
+}
+
+/**
  * Applications registered for the target's MIME type or one of its ancestor
  * types (the exact type's handlers come first). Uses xdg-mime + gio, which
  * petaterm can rely on (the app targets Linux desktops).
  */
 export async function listAppsFor(target: string, locale: string): Promise<AppCandidate[]> {
-  const mime = (await run('xdg-mime', ['query', 'filetype', target])).trim()
-  if (!mime) return []
   const ids: string[] = []
   const seen = new Set<string>()
-  for (const m of mimeChain(mime)) {
+  for (const m of await mimeTypesFor(target)) {
     let out: string
     try {
       out = await run('gio', ['mime', m])

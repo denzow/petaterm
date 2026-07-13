@@ -47,6 +47,8 @@ const api = {
   fsOpenWith: (desktopFile: string, target: string): Promise<FsOpenResult> =>
     ipcRenderer.invoke(IPC.FsOpenWith, desktopFile, target),
   fsListApps: (): Promise<FsAppInfo[]> => ipcRenderer.invoke(IPC.FsListApps),
+  fsMime: (target: string): Promise<string[]> => ipcRenderer.invoke(IPC.FsMime, target),
+  fsListMimeTypes: (): Promise<string[]> => ipcRenderer.invoke(IPC.FsListMimeTypes),
   fsContextMenu: (target: string, x: number, y: number, openerFile?: string): Promise<void> =>
     ipcRenderer.invoke(IPC.FsContextMenu, target, x, y, openerFile),
 

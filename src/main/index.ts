@@ -18,7 +18,7 @@ import {
 import { PtyManager } from './pty-manager'
 import { CwdTracker } from './cwd-tracker'
 import { GitService } from './git-service'
-import { AppCandidate, launchWith, listAllApps, listAppsFor } from './open-with'
+import { AppCandidate, launchWith, listAllApps, listAppsFor, listMimeTypes, mimeTypesFor } from './open-with'
 import { cleanupStaleHookSockets, HookServer } from './hook-server'
 import { HookInstaller } from './hook-installer'
 import { Notifier } from './notifier'
@@ -181,6 +181,20 @@ function registerIpcHandlers(): void {
     launchWith(desktopFile, target)
     return { ok: true }
   })
+
+  // The file's MIME type chain (specific → generic), for the renderer's
+  // MIME-pattern openers. Empty when xdg-mime is unavailable or stumped.
+  ipcMain.handle(IPC.FsMime, async (_e, target: string): Promise<string[]> => {
+    try {
+      return await mimeTypesFor(target)
+    } catch {
+      return []
+    }
+  })
+
+  // Known MIME types (+ per-media-type wildcards), for the settings UI's
+  // pattern completion.
+  ipcMain.handle(IPC.FsListMimeTypes, (): string[] => listMimeTypes())
 
   // Installed applications, for the extension→app settings UI.
   ipcMain.handle(IPC.FsListApps, (): FsAppInfo[] =>

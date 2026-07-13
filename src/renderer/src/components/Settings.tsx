@@ -165,30 +165,34 @@ function FileOpenerSettings(): React.JSX.Element {
   const updateOpener = useFileOpenersStore((s) => s.updateOpener)
   const removeOpener = useFileOpenersStore((s) => s.removeOpener)
   const [apps, setApps] = useState<FsAppInfo[] | null>(null)
+  const [mimeTypes, setMimeTypes] = useState<string[]>([])
 
   useEffect(() => {
     let cancelled = false
     void window.petaterm.fsListApps().then((list) => {
       if (!cancelled) setApps(list)
     })
+    void window.petaterm.fsListMimeTypes().then((list) => {
+      if (!cancelled) setMimeTypes(list)
+    })
     return () => {
       cancelled = true
     }
   }, [])
 
-  // Same normalized extension on two rows: the rows conflict (longest-match
-  // can't order them), flag both.
-  const extCount = new Map<string, number>()
+  // Same normalized pattern on two rows: the rows conflict (matching can't
+  // order them), flag both.
+  const patternCount = new Map<string, number>()
   for (const o of openers) {
-    if (o.ext) extCount.set(o.ext, (extCount.get(o.ext) ?? 0) + 1)
+    if (o.pattern) patternCount.set(o.pattern, (patternCount.get(o.pattern) ?? 0) + 1)
   }
 
   return (
     <div className="file-opener-settings">
       <div className="setting-group">
-        <span className="setting-label">拡張子ごとに開くアプリ</span>
+        <span className="setting-label">拡張子・MIME タイプごとに開くアプリ</span>
         {openers.map((o, i) => {
-          const conflict = o.ext !== '' && (extCount.get(o.ext) ?? 0) > 1
+          const conflict = o.pattern !== '' && (patternCount.get(o.pattern) ?? 0) > 1
           // A configured app may have been uninstalled — keep it selectable
           // so the row still shows what it points to.
           const missing =
@@ -197,10 +201,11 @@ function FileOpenerSettings(): React.JSX.Element {
             <div className="file-opener-row" key={i}>
               <input
                 className={`setting-input file-opener-ext${conflict ? ' conflict' : ''}`}
-                value={o.ext}
-                placeholder="拡張子"
-                onChange={(e) => updateOpener(i, { ext: e.target.value })}
-                title={conflict ? '同じ拡張子が複数あります' : '例: png / tar.gz'}
+                value={o.pattern}
+                placeholder="拡張子 / MIME"
+                list="mime-type-options"
+                onChange={(e) => updateOpener(i, { pattern: e.target.value })}
+                title={conflict ? '同じパターンが複数あります' : '例: png / tar.gz / image/* / text/plain'}
               />
               <AppCombobox
                 apps={apps ?? []}
@@ -226,10 +231,18 @@ function FileOpenerSettings(): React.JSX.Element {
         <button className="sidebar-button" onClick={addOpener}>
           ＋ 追加
         </button>
+        {/* Shared completion source for every pattern input: the system's
+            known MIME types plus type/* wildcards. */}
+        <datalist id="mime-type-options">
+          {mimeTypes.map((m) => (
+            <option key={m} value={m} />
+          ))}
+        </datalist>
       </div>
       <div className="settings-hint">
-        files パネルでファイルを開くとき、拡張子が一致すれば指定のアプリで開きます。未設定の拡張子は
-        OS の既定アプリで開きます。
+        files パネルでファイルを開くとき、パターンが一致すれば指定のアプリで開きます。「/」を含む指定は
+        MIME タイプ（image/* のようなワイルドカード可）として扱い、拡張子の一致が MIME
+        の一致より優先されます。どれにも一致しないファイルは OS の既定アプリで開きます。
       </div>
     </div>
   )

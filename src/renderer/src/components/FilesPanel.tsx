@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { FsEntry } from '../../../shared/ipc'
 import { fileIconUrl } from '../file-icons'
-import { openerFor, openFile, useFileOpenersStore } from '../stores/file-openers'
+import { openFile, resolveOpener, useFileOpenersStore } from '../stores/file-openers'
 import { Tab } from '../stores/tabs'
 
 interface FilesPanelProps {
@@ -247,8 +247,9 @@ function EntryRow({ dir, entry, depth, refreshKey, onError }: EntryRowProps): Re
   const open = entry.isDir && expanded.has(path)
 
   const openEntry = async (): Promise<void> => {
-    // Files open with the configured per-extension app when there is one,
-    // otherwise the OS default; directories open in the file manager.
+    // Files open with the configured app (extension or MIME match) when
+    // there is one, otherwise the OS default; directories open in the file
+    // manager.
     const result = await openFile(path)
     onError(result.ok ? '' : result.error)
   }
@@ -270,11 +271,15 @@ function EntryRow({ dir, entry, depth, refreshKey, onError }: EntryRowProps): Re
         onContextMenu={(ev) => {
           ev.preventDefault()
           setFocused(path)
-          // The menu's 開く honors the configured opener like double-click does.
-          const opener = entry.isDir
-            ? null
-            : openerFor(entry.name, useFileOpenersStore.getState().openers)
-          void window.petaterm.fsContextMenu(path, ev.clientX, ev.clientY, opener?.desktopFile)
+          const { clientX, clientY } = ev
+          // The menu's 開く honors the configured opener like double-click
+          // does; MIME patterns make the lookup async.
+          void (async () => {
+            const opener = entry.isDir
+              ? null
+              : await resolveOpener(path, useFileOpenersStore.getState().openers)
+            await window.petaterm.fsContextMenu(path, clientX, clientY, opener?.desktopFile)
+          })()
         }}
         title={
           entry.isDir
