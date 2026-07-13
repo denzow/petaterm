@@ -78,6 +78,15 @@ export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
   const onKeyDown = (e: React.KeyboardEvent): void => {
     // App-level shortcuts (Ctrl+←/→ など) keep their meaning inside the panel.
     if (e.ctrlKey || e.altKey || e.metaKey) return
+    // Esc clears the filter from anywhere in the panel, even when the
+    // filter matches nothing (rows.length === 0 bails out below).
+    if (e.key === 'Escape') {
+      if (filter) {
+        setFilter('')
+        e.preventDefault()
+      }
+      return
+    }
     const area = areaRef.current
     if (!area) return
     // Document order — exactly the visual order of the rendered rows.
