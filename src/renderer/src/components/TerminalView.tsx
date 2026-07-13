@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { WebLinksAddon } from '@xterm/addon-web-links'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { Tab } from '../stores/tabs'
@@ -10,6 +11,16 @@ import { resolveFontFamily, useAppearanceStore } from '../stores/appearance'
 interface TerminalViewProps {
   tab: Tab
   active: boolean
+}
+
+/**
+ * Hand a clicked link to the OS browser. xterm's default would call
+ * window.open(), which Electron's window-open handler denies, so every link —
+ * plain URLs found by the web-links addon and OSC 8 hyperlinks alike — goes
+ * through this. Main re-checks the scheme; terminal output is untrusted.
+ */
+function openLink(_event: MouseEvent, uri: string): void {
+  window.petaterm.openExternal(uri)
 }
 
 export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Element {
@@ -26,10 +37,14 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
       scrollback: 10000,
       cursorBlink: true,
       allowProposedApi: true,
+      // OSC 8 hyperlinks (Claude Code emits these).
+      linkHandler: { activate: openLink },
       theme: appearance.currentTheme().terminal
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
+    // Plain http(s) URLs printed as text — underlined on hover, click to open.
+    term.loadAddon(new WebLinksAddon(openLink))
     term.open(container)
     try {
       term.loadAddon(new WebglAddon())

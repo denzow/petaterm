@@ -55,6 +55,9 @@ const api = {
   fsContextMenu: (target: string, x: number, y: number, openerFile?: string): Promise<void> =>
     ipcRenderer.invoke(IPC.FsContextMenu, target, x, y, openerFile),
 
+  /** Open an http(s) URL in the default browser; other schemes are ignored. */
+  openExternal: (url: string): void => ipcRenderer.send(IPC.ShellOpenExternal, url),
+
   gitOverview: (cwd: string): Promise<GitOverview> => ipcRenderer.invoke(IPC.GitOverview, cwd),
   gitCheckout: (cwd: string, branch: string): Promise<GitResult> =>
     ipcRenderer.invoke(IPC.GitCheckout, cwd, branch),

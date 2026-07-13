@@ -113,7 +113,7 @@ function createWindow(): void {
   })
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
+    if (isWebUrl(url)) void shell.openExternal(url)
     return { action: 'deny' }
   })
 
@@ -124,7 +124,27 @@ function createWindow(): void {
   }
 }
 
+/**
+ * Whether a URL may be handed to the OS. Terminal output is untrusted — any
+ * program can print a URL or emit an OSC 8 hyperlink — so only http(s) is let
+ * through; schemes like file: or a custom app scheme would launch a local
+ * handler on a single click.
+ */
+function isWebUrl(url: string): boolean {
+  try {
+    const protocol = new URL(url).protocol
+    return protocol === 'http:' || protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 function registerIpcHandlers(): void {
+  // A link clicked in a terminal (plain URL or OSC 8 hyperlink) → default browser.
+  ipcMain.on(IPC.ShellOpenExternal, (_e, url: string) => {
+    if (isWebUrl(url)) void shell.openExternal(url)
+  })
+
   ipcMain.handle(IPC.PtyCreate, (_e, req: PtyCreateRequest) => {
     ptyManager.create(req.tabId, req.cwd)
   })

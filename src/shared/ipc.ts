@@ -18,6 +18,7 @@ export const IPC = {
   FsMime: 'fs:mime',
   FsListMimeTypes: 'fs:list-mime-types',
   FsContextMenu: 'fs:context-menu',
+  ShellOpenExternal: 'shell:open-external',
   GitOverview: 'git:overview',
   GitCheckout: 'git:checkout',
   GitCreateBranch: 'git:create-branch',
