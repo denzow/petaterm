@@ -7,6 +7,8 @@ export type ShortcutAction =
   | 'panelRight'
   | 'prevTab'
   | 'nextTab'
+  | 'moveTabUp'
+  | 'moveTabDown'
   | 'openBookmarks'
   | 'openNotifications'
   | 'copy'
@@ -29,6 +31,8 @@ export const ACTION_LABELS: Record<ShortcutAction, string> = {
   panelRight: '右のパネルへ',
   prevTab: '前のセッションタブ',
   nextTab: '次のセッションタブ',
+  moveTabUp: 'セッションタブを上へ移動',
+  moveTabDown: 'セッションタブを下へ移動',
   openBookmarks: 'ブックマーク一覧',
   openNotifications: '通知一覧',
   copy: 'コピー (ターミナル)',
@@ -44,6 +48,8 @@ export const ACTIONS: ShortcutAction[] = [
   'panelRight',
   'prevTab',
   'nextTab',
+  'moveTabUp',
+  'moveTabDown',
   'openBookmarks',
   'openNotifications',
   'copy',
@@ -62,6 +68,8 @@ const DEFAULT_BINDINGS: Record<ShortcutAction, KeyBinding> = {
   panelRight: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowRight' },
   prevTab: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowUp' },
   nextTab: { ctrl: true, shift: false, alt: false, meta: false, key: 'ArrowDown' },
+  moveTabUp: { ctrl: true, shift: true, alt: false, meta: false, key: 'ArrowUp' },
+  moveTabDown: { ctrl: true, shift: true, alt: false, meta: false, key: 'ArrowDown' },
   openBookmarks: { ctrl: true, shift: true, alt: false, meta: false, key: 'B' },
   openNotifications: { ctrl: true, shift: true, alt: false, meta: false, key: 'N' },
   copy: { ctrl: true, shift: true, alt: false, meta: false, key: 'C' },

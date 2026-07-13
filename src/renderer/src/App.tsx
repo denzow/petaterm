@@ -154,6 +154,12 @@ export default function App(): React.JSX.Element {
         case 'nextTab':
           store.activateRelative(1)
           break
+        case 'moveTabUp':
+          store.moveTab(-1)
+          break
+        case 'moveTabDown':
+          store.moveTab(1)
+          break
         case 'openBookmarks':
           setBookmarksOpen((open) => !open)
           break

@@ -30,6 +30,8 @@ interface TabsState {
   removeTab: (tabId: string) => void
   activateTab: (tabId: string) => void
   activateRelative: (offset: number) => void
+  /** Move the active tab up/down in the sidebar; no-op at the edges. */
+  moveTab: (offset: number) => void
   renameTab: (tabId: string, title: string | null) => void
   setCwd: (tabId: string, cwd: string) => void
   setActivity: (tabId: string, activity: TabActivityState | null, message: string) => void
@@ -116,6 +118,18 @@ export const useTabsStore = create<TabsState>((set, get) => ({
     const index = tabs.findIndex((t) => t.id === activeTabId)
     const next = tabs[(index + offset + tabs.length) % tabs.length]
     activateTab(next.id)
+  },
+
+  moveTab: (offset) => {
+    set((s) => {
+      const index = s.tabs.findIndex((t) => t.id === s.activeTabId)
+      const target = index + offset
+      if (index === -1 || target < 0 || target >= s.tabs.length) return s
+      const tabs = [...s.tabs]
+      const [tab] = tabs.splice(index, 1)
+      tabs.splice(target, 0, tab)
+      return { tabs }
+    })
   },
 
   renameTab: (tabId, title) => {
