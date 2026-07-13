@@ -239,6 +239,32 @@ textarea {
   visibility: visible;
 }
 
+/* Per-tab bookmark star: hidden until hover like the close button, but a
+   bookmarked tab keeps its lit star visible at all times. */
+.tab-bookmark {
+  visibility: hidden;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.tab-item:hover .tab-bookmark {
+  visibility: visible;
+}
+
+.tab-bookmark:hover,
+.tab-bookmark.active {
+  color: var(--yellow);
+}
+
+.tab-bookmark.active {
+  visibility: visible;
+}
+
 .tab-close:hover {
   color: var(--red);
 }

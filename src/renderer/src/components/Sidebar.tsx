@@ -28,9 +28,6 @@ export function Sidebar({
   const tabs = useTabsStore((s) => s.tabs)
   const activeTabId = useTabsStore((s) => s.activeTabId)
   const addTab = useTabsStore((s) => s.addTab)
-  const toggleBookmark = useBookmarksStore((s) => s.toggleBookmark)
-  const activeCwd = tabs.find((t) => t.id === activeTabId)?.cwd ?? ''
-  const activeBookmarked = useBookmarksStore((s) => s.isBookmarked(activeCwd))
   const bookmarksCombo = useKeybindingsStore((s) => formatBinding(s.bindings.openBookmarks))
   const unreadNotifs = useNotificationsStore((s) => s.unread)
   const [width, setWidth] = useState(loadWidth)
@@ -78,18 +75,6 @@ export function Sidebar({
           ＋ 新しいセッションタブ
         </button>
         <button
-          className={`sidebar-button${activeBookmarked ? ' active' : ''}`}
-          onClick={() => toggleBookmark(activeCwd)}
-          disabled={!activeCwd}
-          title={
-            activeBookmarked
-              ? 'このディレクトリのブックマークを解除'
-              : '現在のディレクトリをブックマーク'
-          }
-        >
-          {activeBookmarked ? '★ ブックマーク済み' : '☆ ディレクトリをブックマーク'}
-        </button>
-        <button
           className="sidebar-button"
           onClick={onOpenBookmarks}
           title={`ブックマーク一覧 (${bookmarksCombo})`}
@@ -122,6 +107,8 @@ function TabItem({ tab, active }: { tab: Tab; active: boolean }): React.JSX.Elem
   const activateTab = useTabsStore((s) => s.activateTab)
   const removeTab = useTabsStore((s) => s.removeTab)
   const renameTab = useTabsStore((s) => s.renameTab)
+  const toggleBookmark = useBookmarksStore((s) => s.toggleBookmark)
+  const bookmarked = useBookmarksStore((s) => s.isBookmarked(tab.cwd))
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
 
@@ -174,6 +161,21 @@ function TabItem({ tab, active }: { tab: Tab; active: boolean }): React.JSX.Elem
           <span className="tab-title">{tabLabel(tab)}</span>
           {tab.cwd && <span className="tab-cwd">{tab.cwd.replace(/^\/home\/[^/]+/, '~')}</span>}
         </span>
+      )}
+      {tab.cwd && (
+        <button
+          className={`tab-bookmark${bookmarked ? ' active' : ''}`}
+          title={
+            bookmarked ? 'このディレクトリのブックマークを解除' : 'このディレクトリをブックマーク'
+          }
+          onClick={(e) => {
+            e.stopPropagation()
+            toggleBookmark(tab.cwd)
+          }}
+          onDoubleClick={(e) => e.stopPropagation()}
+        >
+          ★
+        </button>
       )}
       <button
         className="tab-close"

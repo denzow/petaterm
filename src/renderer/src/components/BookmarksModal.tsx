@@ -120,7 +120,7 @@ export function BookmarksModal({ onClose }: BookmarksModalProps): React.JSX.Elem
           {filtered.length === 0 && (
             <div className="bookmarks-empty">
               {bookmarks.length === 0
-                ? 'ブックマークはまだありません（サイドバーの ☆ で現在のディレクトリを保存）'
+                ? 'ブックマークはまだありません（タブの ★ でそのディレクトリを保存）'
                 : '一致するブックマークがありません'}
             </div>
           )}
