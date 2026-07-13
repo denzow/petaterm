@@ -13,6 +13,8 @@ export interface Tab {
    */
   activity: TabActivityState | null
   activityMessage: string
+  /** Foreground command running in the tab (from main's poll); null = idle. */
+  runningProcess: string | null
   /**
    * The session entered a waiting-on-the-user state (permission / idle) while
    * the tab wasn't being looked at (inactive tab or unfocused window). The
@@ -34,6 +36,7 @@ interface TabsState {
   moveTab: (offset: number) => void
   renameTab: (tabId: string, title: string | null) => void
   setCwd: (tabId: string, cwd: string) => void
+  setRunningProcess: (tabId: string, process: string | null) => void
   setActivity: (tabId: string, activity: TabActivityState | null, message: string) => void
   /** Mark a waiting tab as seen (drops the sidebar highlight, keeps the lamp). */
   clearAttention: (tabId: string) => void
@@ -64,6 +67,7 @@ export const useTabsStore = create<TabsState>((set, get) => ({
         cwd: startCwd,
         activity: null,
         activityMessage: '',
+        runningProcess: null,
         attention: false
       }
       const tabs = [...s.tabs]
@@ -80,6 +84,7 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       cwd: st.cwd,
       activity: null,
       activityMessage: '',
+      runningProcess: null,
       attention: false
     }))
     const active = tabs[activeIndex] ?? tabs[0] ?? null
@@ -141,6 +146,12 @@ export const useTabsStore = create<TabsState>((set, get) => ({
   setCwd: (tabId, cwd) => {
     set((s) => ({
       tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, cwd } : t))
+    }))
+  },
+
+  setRunningProcess: (tabId, process) => {
+    set((s) => ({
+      tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, runningProcess: process } : t))
     }))
   },
 

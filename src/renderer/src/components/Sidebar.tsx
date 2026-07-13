@@ -158,7 +158,14 @@ function TabItem({ tab, active }: { tab: Tab; active: boolean }): React.JSX.Elem
         />
       ) : (
         <span className="tab-label">
-          <span className="tab-title">{tabLabel(tab)}</span>
+          <span className="tab-title">
+            {tabLabel(tab)}
+            {tab.runningProcess && (
+              <span className="tab-process" title={`実行中: ${tab.runningProcess}`}>
+                {tab.runningProcess}
+              </span>
+            )}
+          </span>
           {tab.cwd && <span className="tab-cwd">{tab.cwd.replace(/^\/home\/[^/]+/, '~')}</span>}
         </span>
       )}

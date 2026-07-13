@@ -225,6 +225,17 @@ textarea {
   white-space: nowrap;
 }
 
+/* Foreground command running in the tab, next to the title. */
+.tab-process {
+  margin-left: 6px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.tab-process::before {
+  content: '⏵ ';
+}
+
 .tab-close {
   visibility: hidden;
   background: none;

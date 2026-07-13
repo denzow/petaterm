@@ -17,6 +17,7 @@ import {
 } from '../shared/ipc'
 import { PtyManager } from './pty-manager'
 import { CwdTracker } from './cwd-tracker'
+import { ProcessTracker } from './process-tracker'
 import { GitService } from './git-service'
 import { AppCandidate, launchWith, listAllApps, listAppsFor, listMimeTypes, mimeTypesFor } from './open-with'
 import { cleanupStaleHookSockets, HookServer } from './hook-server'
@@ -40,6 +41,7 @@ if (!app.isPackaged) {
 const socketPath = path.join(app.getPath('userData'), `hook-${process.pid}.sock`)
 const ptyManager = new PtyManager(() => mainWindow?.webContents ?? null, socketPath)
 const cwdTracker = new CwdTracker(ptyManager, () => mainWindow?.webContents ?? null)
+const processTracker = new ProcessTracker(ptyManager, () => mainWindow?.webContents ?? null)
 const gitService = new GitService()
 // Desktop notifications are titled with the repo (or directory) the tab's
 // Claude Code session runs in, so multiple sessions stay distinguishable.
@@ -277,6 +279,7 @@ app.whenReady().then(() => {
   cleanupStaleHookSockets(app.getPath('userData'))
   hookServer.start()
   cwdTracker.start()
+  processTracker.start()
   createWindow()
   // Provisional default; the renderer re-registers with the saved binding on load.
   registerHotkey('F12')
@@ -304,6 +307,7 @@ app.on('will-quit', () => {
 
 app.on('before-quit', () => {
   cwdTracker.stop()
+  processTracker.stop()
   ptyManager.disposeAll()
   hookServer.stop()
 })

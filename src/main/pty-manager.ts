@@ -9,6 +9,11 @@ interface PtySession {
   proc: pty.IPty
 }
 
+/** The shell every tab runs; also the "idle" marker for process tracking. */
+export function defaultShell(): string {
+  return process.env.SHELL || '/bin/bash'
+}
+
 export class PtyManager {
   private sessions = new Map<string, PtySession>()
 
@@ -19,7 +24,7 @@ export class PtyManager {
 
   create(tabId: string, cwd?: string): void {
     if (this.sessions.has(tabId)) return
-    const shell = process.env.SHELL || '/bin/bash'
+    const shell = defaultShell()
     // A restored cwd may no longer exist — fall back to home rather than crash.
     const startDir = cwd && this.isDir(cwd) ? cwd : os.homedir()
     const env: Record<string, string> = {
@@ -91,6 +96,17 @@ export class PtyManager {
   pids(): Map<string, number> {
     const result = new Map<string, number>()
     for (const [tabId, session] of this.sessions) result.set(tabId, session.proc.pid)
+    return result
+  }
+
+  /**
+   * Foreground process name (argv[0]) per tab, straight from node-pty
+   * (tcgetpgrp on the pty + /proc/<pgrp>/cmdline). The shell itself when the
+   * tab sits at the prompt.
+   */
+  foregroundProcesses(): Map<string, string> {
+    const result = new Map<string, string>()
+    for (const [tabId, session] of this.sessions) result.set(tabId, session.proc.process)
     return result
   }
 }

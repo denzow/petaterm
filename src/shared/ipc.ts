@@ -8,6 +8,7 @@ export const IPC = {
   PtyData: 'pty:data',
   PtyExit: 'pty:exit',
   TabCwd: 'tab:cwd',
+  TabProcess: 'tab:process',
   TabActivity: 'tab:activity',
   AppNotification: 'notification:event',
   FsList: 'fs:list',
@@ -46,6 +47,12 @@ export interface PtyExitEvent {
 export interface TabCwdEvent {
   tabId: string
   cwd: string
+}
+
+export interface TabProcessEvent {
+  tabId: string
+  /** Foreground command name in the tab; null = shell prompt (idle). */
+  process: string | null
 }
 
 /** Claude Code session status, derived from hook events. */

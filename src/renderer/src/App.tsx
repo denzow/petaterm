@@ -77,6 +77,9 @@ export default function App(): React.JSX.Element {
     const unsubCwd = window.petaterm.onTabCwd(({ tabId, cwd }) => {
       useTabsStore.getState().setCwd(tabId, cwd)
     })
+    const unsubProcess = window.petaterm.onTabProcess(({ tabId, process }) => {
+      useTabsStore.getState().setRunningProcess(tabId, process)
+    })
     const unsubActivity = window.petaterm.onTabActivity(({ tabId, state, message }) => {
       useTabsStore.getState().setActivity(tabId, state, message)
     })
@@ -117,6 +120,7 @@ export default function App(): React.JSX.Element {
 
     return () => {
       unsubCwd()
+      unsubProcess()
       unsubActivity()
       unsubExit()
       unsubNotification()

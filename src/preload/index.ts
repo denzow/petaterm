@@ -13,7 +13,8 @@ import {
   PtyDataEvent,
   PtyExitEvent,
   TabActivityEvent,
-  TabCwdEvent
+  TabCwdEvent,
+  TabProcessEvent
 } from '../shared/ipc'
 
 function subscribe<T>(channel: string, callback: (payload: T) => void): () => void {
@@ -37,6 +38,8 @@ const api = {
   onPtyData: (cb: (payload: PtyDataEvent) => void): (() => void) => subscribe(IPC.PtyData, cb),
   onPtyExit: (cb: (payload: PtyExitEvent) => void): (() => void) => subscribe(IPC.PtyExit, cb),
   onTabCwd: (cb: (payload: TabCwdEvent) => void): (() => void) => subscribe(IPC.TabCwd, cb),
+  onTabProcess: (cb: (payload: TabProcessEvent) => void): (() => void) =>
+    subscribe(IPC.TabProcess, cb),
   onTabActivity: (cb: (payload: TabActivityEvent) => void): (() => void) =>
     subscribe(IPC.TabActivity, cb),
   onNotification: (cb: (payload: AppNotificationEvent) => void): (() => void) =>
