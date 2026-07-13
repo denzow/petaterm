@@ -492,6 +492,16 @@ textarea {
   background: var(--bg-hover);
 }
 
+/* Keyboard cursor row; the panel itself keeps no visible focus ring. */
+.files-area:focus {
+  outline: none;
+}
+
+.files-item.focused {
+  background: var(--bg-hover);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
 .files-caret {
   flex-shrink: 0;
   width: 10px;

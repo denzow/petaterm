@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { FsEntry } from '../../../shared/ipc'
 import { fileIconUrl } from '../file-icons'
 import { Tab } from '../stores/tabs'
@@ -8,19 +8,119 @@ interface FilesPanelProps {
 }
 
 /**
+ * Expansion / focus state lifted to the panel so the keyboard handler can
+ * drive the whole tree; rows read it via context. Paths are absolute.
+ */
+interface TreeControl {
+  expanded: Set<string>
+  toggleDir: (path: string) => void
+  focused: string | null
+  setFocused: (path: string) => void
+}
+
+const TreeContext = createContext<TreeControl>({
+  expanded: new Set(),
+  toggleDir: () => {},
+  focused: null,
+  setFocused: () => {}
+})
+
+/**
  * File tree rooted at the tab's current directory. Follows the shell's cwd
  * automatically (tab.cwd is kept current by cwd-tracker). Clicking a
  * directory expands its children inline; files open with the OS default app
- * on double-click.
+ * on double-click. Keyboard: ↑/↓ move, →/← expand/collapse (← on a leaf
+ * jumps to the parent), Enter opens.
  */
 export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
   const [error, setError] = useState('')
   // Bumping this refetches every mounted level while keeping expansion state.
   const [refreshKey, setRefreshKey] = useState(0)
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
+  const [focused, setFocused] = useState<string | null>(null)
+  const areaRef = useRef<HTMLDivElement>(null)
 
   const refresh = (): void => {
     setError('')
     setRefreshKey((k) => k + 1)
+  }
+
+  // Expansion (and focus) reset when the tree follows the shell into a
+  // different directory — same behavior as the old per-row state, which the
+  // path-keyed remount used to guarantee.
+  useEffect(() => {
+    setExpanded(new Set())
+    setFocused(null)
+  }, [tab.cwd])
+
+  // Keys should work the moment the panel is opened, without a click first.
+  useEffect(() => {
+    areaRef.current?.focus()
+  }, [])
+
+  const toggleDir = (path: string): void => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(path)) next.delete(path)
+      else next.add(path)
+      return next
+    })
+  }
+
+  const onKeyDown = (e: React.KeyboardEvent): void => {
+    // App-level shortcuts (Ctrl+←/→ など) keep their meaning inside the panel.
+    if (e.ctrlKey || e.altKey || e.metaKey) return
+    const area = areaRef.current
+    if (!area) return
+    // Document order — exactly the visual order of the rendered rows.
+    const rows = [...area.querySelectorAll<HTMLElement>('.files-item[data-path]')]
+    if (rows.length === 0) return
+    const index = rows.findIndex((r) => r.dataset.path === focused)
+    const row = index === -1 ? null : rows[index]
+    const path = row?.dataset.path ?? null
+    const isDir = row?.dataset.isdir === '1'
+    const isOpen = path !== null && expanded.has(path)
+
+    const focusRow = (target: HTMLElement | undefined): void => {
+      if (!target?.dataset.path) return
+      setFocused(target.dataset.path)
+      target.scrollIntoView({ block: 'nearest' })
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        focusRow(rows[index === -1 ? 0 : Math.min(index + 1, rows.length - 1)])
+        break
+      case 'ArrowUp':
+        focusRow(rows[index === -1 ? 0 : Math.max(index - 1, 0)])
+        break
+      case 'ArrowRight':
+        if (!path || !isDir) return
+        if (!isOpen) toggleDir(path)
+        else focusRow(rows[Math.min(index + 1, rows.length - 1)]) // into the first child
+        break
+      case 'ArrowLeft': {
+        if (!path) return
+        if (isDir && isOpen) {
+          toggleDir(path)
+          break
+        }
+        const parent = rows.find((r) => r.dataset.path === path.slice(0, path.lastIndexOf('/')))
+        focusRow(parent)
+        break
+      }
+      case 'Enter':
+        if (!path) return
+        if (isDir) toggleDir(path)
+        else
+          void window.petaterm.fsOpen(path).then((result) => {
+            setError(result.ok ? '' : result.error)
+          })
+        break
+      default:
+        return
+    }
+    e.preventDefault()
   }
 
   return (
@@ -37,10 +137,18 @@ export function FilesPanel({ tab }: FilesPanelProps): React.JSX.Element {
 
       {error && <div className="git-error">{error}</div>}
 
-      <div className="files-area">
+      <div
+        className="files-area"
+        ref={areaRef}
+        tabIndex={0}
+        onKeyDown={onKeyDown}
+        title="↑↓で移動 / →←で開閉 / Enterで開く"
+      >
         <div className="files-list">
           {tab.cwd && (
-            <DirChildren dir={tab.cwd} depth={0} refreshKey={refreshKey} onError={setError} />
+            <TreeContext.Provider value={{ expanded, toggleDir, focused, setFocused }}>
+              <DirChildren dir={tab.cwd} depth={0} refreshKey={refreshKey} onError={setError} />
+            </TreeContext.Provider>
           )}
         </div>
       </div>
@@ -109,8 +217,8 @@ function DirChildren({ dir, depth, refreshKey, onError }: DirChildrenProps): Rea
   return (
     <>
       {sorted.map((e) => (
-        // Keyed by full path so rows (and their expansion state) reset when
-        // the tree follows the shell into a different directory.
+        // Keyed by full path so rows reset when the tree follows the shell
+        // into a different directory.
         <EntryRow
           key={`${dir}/${e.name}`}
           dir={dir}
@@ -133,8 +241,9 @@ interface EntryRowProps {
 }
 
 function EntryRow({ dir, entry, depth, refreshKey, onError }: EntryRowProps): React.JSX.Element {
-  const [open, setOpen] = useState(false)
+  const { expanded, toggleDir, focused, setFocused } = useContext(TreeContext)
   const path = `${dir}/${entry.name}`
+  const open = entry.isDir && expanded.has(path)
 
   const openWithOS = async (): Promise<void> => {
     // Files open in the OS default app; directories open in the file manager.
@@ -145,16 +254,20 @@ function EntryRow({ dir, entry, depth, refreshKey, onError }: EntryRowProps): Re
   return (
     <>
       <div
-        className={`files-item${entry.isDir ? ' dir' : ''}`}
+        className={`files-item${entry.isDir ? ' dir' : ''}${focused === path ? ' focused' : ''}`}
         style={{ paddingLeft: `${10 + depth * 16}px` }}
+        data-path={path}
+        data-isdir={entry.isDir ? '1' : '0'}
         onClick={() => {
-          if (entry.isDir) setOpen((o) => !o)
+          setFocused(path)
+          if (entry.isDir) toggleDir(path)
         }}
         onDoubleClick={() => {
           if (!entry.isDir) void openWithOS()
         }}
         onContextMenu={(ev) => {
           ev.preventDefault()
+          setFocused(path)
           void window.petaterm.fsContextMenu(path, ev.clientX, ev.clientY)
         }}
         title={
@@ -174,9 +287,7 @@ function EntryRow({ dir, entry, depth, refreshKey, onError }: EntryRowProps): Re
         <span className="files-size">{entry.isDir ? '' : formatSize(entry.size)}</span>
         <span className="files-mtime">{formatMtime(entry.mtime)}</span>
       </div>
-      {entry.isDir && open && (
-        <DirChildren dir={path} depth={depth + 1} refreshKey={refreshKey} onError={onError} />
-      )}
+      {open && <DirChildren dir={path} depth={depth + 1} refreshKey={refreshKey} onError={onError} />}
     </>
   )
 }
