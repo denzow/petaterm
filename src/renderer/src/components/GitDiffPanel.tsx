@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { GitDiffFile, GitOverview } from '../../../shared/ipc'
 import { Tab } from '../stores/tabs'
-import { DiffViewer } from './DiffViewer'
+import { DiffViewer, statusLetter } from './DiffViewer'
 
 interface GitDiffPanelProps {
   tab: Tab
@@ -14,6 +14,9 @@ export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
   const [commitMessage, setCommitMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  // File-list highlight: the file whose diff is at the top of the viewport.
+  const [activeFile, setActiveFile] = useState<string | null>(null)
+  const diffScrollRef = useRef<HTMLDivElement>(null)
 
   const refresh = useCallback(async (): Promise<void> => {
     if (!tab.cwd) return
@@ -63,6 +66,30 @@ export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
     // receiving app (Claude Code / readline).
     window.petaterm.ptyWrite(tab.id, `\x1b[200~${text}\x1b[201~`)
   }
+
+  const jumpToFile = (path: string): void => {
+    setActiveFile(path)
+    diffScrollRef.current
+      ?.querySelector(`[data-diff-file="${CSS.escape(path)}"]`)
+      ?.scrollIntoView({ block: 'start' })
+  }
+
+  // Follow the scroll: highlight the last file whose diff starts at or above
+  // the viewport top.
+  const onDiffScroll = (): void => {
+    const container = diffScrollRef.current
+    if (!container) return
+    const top = container.getBoundingClientRect().top
+    let current: string | null = null
+    for (const el of container.querySelectorAll<HTMLElement>('[data-diff-file]')) {
+      if (el.getBoundingClientRect().top - top <= 8) current = el.dataset.diffFile ?? null
+      else break
+    }
+    if (current) setActiveFile(current)
+  }
+
+  // The remembered file may vanish on refresh — fall back to the first one.
+  const highlighted = diff.some((f) => f.path === activeFile) ? activeFile : (diff[0]?.path ?? null)
 
   return (
     <div className="git-panel">
@@ -132,7 +159,40 @@ export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
             {diff.length === 0 ? (
               <div className="git-panel-empty">変更はありません</div>
             ) : (
-              <DiffViewer files={diff} onSend={sendToClaude} />
+              <>
+                <div className="diff-file-list">
+                  {diff.map((f) => {
+                    const add = f.hunks.reduce(
+                      (n, h) => n + h.lines.filter((l) => l.type === 'add').length,
+                      0
+                    )
+                    const del = f.hunks.reduce(
+                      (n, h) => n + h.lines.filter((l) => l.type === 'del').length,
+                      0
+                    )
+                    return (
+                      <div
+                        key={f.path}
+                        className={`diff-file-list-item${f.path === highlighted ? ' active' : ''}`}
+                        title={f.path}
+                        onClick={() => jumpToFile(f.path)}
+                      >
+                        <span className={`diff-status diff-status-${f.status}`}>
+                          {statusLetter(f.status)}
+                        </span>
+                        <span className="diff-file-list-path">{f.path}</span>
+                        <span className="diff-file-list-counts">
+                          {add > 0 && <span className="add">+{add}</span>}
+                          {del > 0 && <span className="del">−{del}</span>}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="diff-scroll" ref={diffScrollRef} onScroll={onDiffScroll}>
+                  <DiffViewer files={diff} onSend={sendToClaude} />
+                </div>
+              </>
             )}
           </div>
         </>

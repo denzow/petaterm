@@ -30,6 +30,10 @@ interface DiffViewerProps {
 
 let commentIdCounter = 0
 
+export function statusLetter(status: GitDiffFile['status']): string {
+  return status === 'added' ? 'A' : status === 'deleted' ? 'D' : status === 'renamed' ? 'R' : 'M'
+}
+
 /**
  * Renders the working-tree diff. Clicking a line selects it (shift+click
  * extends the range within the same hunk); a comment box then lets the user
@@ -121,16 +125,11 @@ export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Elemen
   return (
     <div className="diff-viewer">
       {files.map((file) => (
-        <div key={file.path} className="diff-file">
+        // data-diff-file lets the panel's file list scroll-jump here.
+        <div key={file.path} className="diff-file" data-diff-file={file.path}>
           <div className="diff-file-header">
             <span className={`diff-status diff-status-${file.status}`}>
-              {file.status === 'added'
-                ? 'A'
-                : file.status === 'deleted'
-                  ? 'D'
-                  : file.status === 'renamed'
-                    ? 'R'
-                    : 'M'}
+              {statusLetter(file.status)}
             </span>
             <span className="diff-file-path">
               {file.status === 'renamed' && file.oldPath ? `${file.oldPath} → ` : ''}

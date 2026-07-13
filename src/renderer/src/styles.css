@@ -866,9 +866,70 @@ textarea {
 
 .git-diff-area {
   flex: 1;
-  overflow: auto;
+  display: flex;
+  overflow: hidden;
   margin-top: 8px;
   border-top: 1px solid var(--border);
+}
+
+/* Changed-file list beside the diff; clicking jumps, scrolling follows. */
+.diff-file-list {
+  width: 210px;
+  max-width: 35%;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  padding: 4px 0;
+}
+
+.diff-file-list-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.diff-file-list-item:hover {
+  background: var(--bg-hover);
+}
+
+.diff-file-list-item.active {
+  background: var(--bg-hover);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* Ellipsize from the left so the file name (the tail) stays readable. */
+.diff-file-list-path {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+.diff-file-list-counts {
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.diff-file-list-counts .add {
+  color: var(--green);
+}
+
+.diff-file-list-counts .del {
+  color: var(--red);
+}
+
+.diff-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
 }
 
 /* ---------- commit box ---------- */
