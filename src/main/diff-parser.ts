@@ -72,9 +72,11 @@ export function parseUnifiedDiff(diffText: string): GitDiffFile[] {
 }
 
 function stripPrefix(p: string): string | null {
-  if (p === '/dev/null') return null
-  if (p.startsWith('a/') || p.startsWith('b/')) return p.slice(2)
-  return p
+  // git appends a TAB (plus an optional timestamp) after paths containing a space.
+  const path = p.split('\t')[0]
+  if (path === '/dev/null') return null
+  if (path.startsWith('a/') || path.startsWith('b/')) return path.slice(2)
+  return path
 }
 
 export function statusLabel(status: DiffFileStatus): string {

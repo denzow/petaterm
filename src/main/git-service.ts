@@ -2,6 +2,10 @@ import { simpleGit } from 'simple-git'
 import { GitDiffFile, GitLogEntry, GitOverview, GitResult } from '../shared/ipc'
 import { parseUnifiedDiff } from './diff-parser'
 
+// Without this, git escapes non-ASCII bytes in diff headers ("\346\227\245"),
+// so the file paths the renderer draws would be mangled.
+const RAW_PATHS = ['core.quotePath=false']
+
 export class GitService {
   async overview(cwd: string): Promise<GitOverview> {
     const empty: GitOverview = { isRepo: false, currentBranch: '', branches: [], hasCommits: false }
@@ -40,16 +44,34 @@ export class GitService {
     }
   }
 
-  /** Working-tree diff (staged + unstaged) against HEAD. */
+  /** Working-tree diff (staged + unstaged + untracked) against HEAD. */
   async diff(cwd: string): Promise<GitDiffFile[]> {
     try {
-      const git = simpleGit({ baseDir: cwd })
+      const git = simpleGit({ baseDir: cwd, config: RAW_PATHS })
       const args = (await this.headExists(cwd)) ? ['HEAD'] : []
-      const text = await git.diff(args)
-      return parseUnifiedDiff(text)
+      const tracked = parseUnifiedDiff(await git.diff(args))
+      const files = [...tracked, ...(await this.untrackedDiff(cwd))]
+      return files.sort((a, b) => a.path.localeCompare(b.path))
     } catch {
       return []
     }
+  }
+
+  /**
+   * `git diff` never reports untracked files, but `commit` stages them with
+   * `add -A` — so diff each against /dev/null to show new files as additions.
+   * Listed from the repo root so the paths match diff's root-relative ones.
+   */
+  private async untrackedDiff(cwd: string): Promise<GitDiffFile[]> {
+    const root = await this.repoRoot(cwd)
+    if (!root) return []
+    const git = simpleGit({ baseDir: root, config: RAW_PATHS })
+    const listed = await git.raw(['ls-files', '--others', '--exclude-standard', '-z'])
+    const paths = listed.split('\0').filter(Boolean)
+    const diffs = await Promise.all(
+      paths.map((p) => git.diff(['--no-index', '--', '/dev/null', p]).catch(() => ''))
+    )
+    return diffs.flatMap(parseUnifiedDiff)
   }
 
   /** Recent commits, newest first, with the current HEAD marked. */
