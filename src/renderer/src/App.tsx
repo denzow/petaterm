@@ -3,23 +3,25 @@ import { Sidebar } from './components/Sidebar'
 import { TerminalView } from './components/TerminalView'
 import { TerminalSearch } from './components/TerminalSearch'
 import { FilesPanel } from './components/FilesPanel'
+import { GitControlPanel } from './components/GitControlPanel'
 import { GitDiffPanel } from './components/GitDiffPanel'
 import { GitLogPanel } from './components/GitLogPanel'
 import { Settings } from './components/Settings'
 import { BookmarksModal } from './components/BookmarksModal'
 import { NotificationsModal } from './components/NotificationsModal'
+import { TabSearchModal } from './components/TabSearchModal'
 import { useTabsStore } from './stores/tabs'
 import { useNotificationsStore } from './stores/notifications'
 import { ShortcutAction, toAccelerator, useKeybindingsStore } from './stores/keybindings'
 import { loadSession, saveSession } from './stores/session'
 
-type MainPanel = 'terminal' | 'files' | 'diff' | 'log'
+type MainPanel = 'terminal' | 'git' | 'files' | 'diff' | 'log'
 
 /** Main-area panels in left-to-right order for Ctrl+←/→ switching; the Git
     panels only exist when the active tab's cwd is a repository, and files
     sits to their right. */
 function panelOrder(isRepo: boolean): MainPanel[] {
-  return isRepo ? ['terminal', 'diff', 'log', 'files'] : ['terminal', 'files']
+  return isRepo ? ['terminal', 'diff', 'git', 'log', 'files'] : ['terminal', 'files']
 }
 
 export default function App(): React.JSX.Element {
@@ -29,6 +31,7 @@ export default function App(): React.JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [bookmarksOpen, setBookmarksOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [tabSearchOpen, setTabSearchOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchFocus, setSearchFocus] = useState(0)
   const [gitInfo, setGitInfo] = useState<{ isRepo: boolean; branch: string }>({
@@ -65,7 +68,9 @@ export default function App(): React.JSX.Element {
 
   // Never leave a Git panel open once the active tab is no longer a repo.
   useEffect(() => {
-    if (!gitInfo.isRepo) setPanel((p) => (p === 'diff' || p === 'log' ? 'terminal' : p))
+    if (!gitInfo.isRepo) {
+      setPanel((p) => (p === 'git' || p === 'diff' || p === 'log' ? 'terminal' : p))
+    }
   }, [gitInfo.isRepo])
 
   // Switching session tabs always lands on the terminal — the previous tab's
@@ -182,9 +187,34 @@ export default function App(): React.JSX.Element {
           break
       }
     }
+    // Shift pressed twice in a row (nothing in between) opens the tab search
+    // palette. `lastShift` is the timestamp of the previous lone Shift press;
+    // any other key resets it, so Shift+X followed by Shift never triggers.
+    let lastShift = 0
+    const DOUBLE_SHIFT_MS = 400
+    const isTypingTarget = (target: EventTarget | null): boolean =>
+      target instanceof HTMLElement &&
+      (target.tagName === 'INPUT' || target.tagName === 'SELECT') &&
+      // xterm's hidden textarea is where terminal typing lands — not a form field.
+      !target.classList.contains('xterm-helper-textarea')
+
     const handler = (e: KeyboardEvent): void => {
       const kb = useKeybindingsStore.getState()
       if (kb.capturing) return // don't fire actions while rebinding in settings
+      if (e.key === 'Shift') {
+        // Skip while typing in a real text field (settings, other palettes) —
+        // capitalizing there shouldn't pop the palette open.
+        if (e.repeat || e.ctrlKey || e.altKey || e.metaKey || isTypingTarget(e.target)) return
+        const now = e.timeStamp
+        if (lastShift && now - lastShift < DOUBLE_SHIFT_MS) {
+          lastShift = 0
+          setTabSearchOpen((open) => !open)
+        } else {
+          lastShift = now
+        }
+        return
+      }
+      lastShift = 0
       const action = kb.actionFor(e)
       if (!action) return
       // copy/paste are handled inside the focused TerminalView (they need the
@@ -246,6 +276,13 @@ export default function App(): React.JSX.Element {
                 diff
               </button>
               <button
+                className={`view-tab${panel === 'git' ? ' active' : ''}`}
+                onClick={() => setPanel('git')}
+                title="git パネル: ブランチ / コミット / pull / push (Ctrl+←/→)"
+              >
+                git
+              </button>
+              <button
                 className={`view-tab${panel === 'log' ? ' active' : ''}`}
                 onClick={() => setPanel('log')}
                 title="log パネル (Ctrl+←/→)"
@@ -287,11 +324,21 @@ export default function App(): React.JSX.Element {
               />
             )}
           </div>
+          {panel === 'git' && activeTab && <GitControlPanel tab={activeTab} />}
           {panel === 'files' && activeTab && <FilesPanel tab={activeTab} />}
           {panel === 'diff' && activeTab && <GitDiffPanel tab={activeTab} />}
           {panel === 'log' && activeTab && <GitLogPanel tab={activeTab} />}
         </div>
       </div>
+      {tabSearchOpen && (
+        <TabSearchModal
+          onClose={() => setTabSearchOpen(false)}
+          onSelect={(tabId) => {
+            useTabsStore.getState().activateTab(tabId)
+            setTabSearchOpen(false)
+          }}
+        />
+      )}
       {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
       {bookmarksOpen && <BookmarksModal onClose={() => setBookmarksOpen(false)} />}
       {notificationsOpen && (

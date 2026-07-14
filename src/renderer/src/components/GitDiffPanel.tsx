@@ -22,9 +22,6 @@ function loadListWidth(): number {
 export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
   const [overview, setOverview] = useState<GitOverview | null>(null)
   const [diff, setDiff] = useState<GitDiffFile[]>([])
-  const [newBranch, setNewBranch] = useState('')
-  const [commitMessage, setCommitMessage] = useState('')
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   // File-list highlight: the file whose diff is at the top of the viewport.
   const [activeFile, setActiveFile] = useState<string | null>(null)
@@ -35,7 +32,6 @@ export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
   const refresh = useCallback(async (): Promise<void> => {
     if (!tab.cwd) return
     setLoading(true)
-    setError('')
     try {
       const ov = await window.petaterm.gitOverview(tab.cwd)
       setOverview(ov)
@@ -48,32 +44,6 @@ export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
   useEffect(() => {
     void refresh()
   }, [refresh])
-
-  const run = async (op: () => Promise<{ ok: boolean; error?: string }>): Promise<void> => {
-    const result = await op()
-    // refresh() clears the error first, so set it afterwards to keep it visible.
-    await refresh()
-    if (!result.ok) setError(result.error ?? '操作に失敗しました')
-  }
-
-  const checkout = async (branch: string): Promise<void> => {
-    if (!branch || branch === overview?.currentBranch) return
-    await run(() => window.petaterm.gitCheckout(tab.cwd, branch))
-  }
-
-  const createBranch = async (): Promise<void> => {
-    const name = newBranch.trim()
-    if (!name) return
-    await run(() => window.petaterm.gitCreateBranch(tab.cwd, name))
-    setNewBranch('')
-  }
-
-  const commit = async (): Promise<void> => {
-    const message = commitMessage.trim()
-    if (!message || diff.length === 0) return
-    await run(() => window.petaterm.gitCommit(tab.cwd, message))
-    setCommitMessage('')
-  }
 
   const sendToClaude = (text: string): void => {
     // Bracketed paste keeps multi-line text as a single paste for the
@@ -153,52 +123,6 @@ export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
         </div>
       ) : (
         <>
-          {error && <div className="git-error">{error}</div>}
-
-          <div className="git-branch-row">
-            <label>ブランチ</label>
-            <select value={overview.currentBranch} onChange={(e) => void checkout(e.target.value)}>
-              {overview.branches.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="git-branch-row">
-            <input
-              placeholder="新しいブランチ名"
-              value={newBranch}
-              onChange={(e) => setNewBranch(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void createBranch()
-              }}
-            />
-            <button onClick={() => void createBranch()}>作成</button>
-          </div>
-
-          <div className="git-commit-box">
-            <textarea
-              placeholder="コミットメッセージ"
-              value={commitMessage}
-              onChange={(e) => setCommitMessage(e.target.value)}
-            />
-            <div className="git-commit-actions">
-              <span className="git-commit-hint">
-                {diff.length === 0
-                  ? '変更はありません'
-                  : `${diff.length} ファイルを全てステージしてコミット`}
-              </span>
-              <button
-                className="primary"
-                disabled={!commitMessage.trim() || diff.length === 0}
-                onClick={() => void commit()}
-              >
-                コミット
-              </button>
-            </div>
-          </div>
-
           <div className="git-diff-area" ref={diffAreaRef}>
             {diff.length === 0 ? (
               <div className="git-panel-empty">変更はありません</div>

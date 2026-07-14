@@ -8,21 +8,73 @@ const RAW_PATHS = ['core.quotePath=false']
 
 export class GitService {
   async overview(cwd: string): Promise<GitOverview> {
-    const empty: GitOverview = { isRepo: false, currentBranch: '', branches: [], hasCommits: false }
+    const empty: GitOverview = {
+      isRepo: false,
+      currentBranch: '',
+      branches: [],
+      hasCommits: false,
+      tracking: null,
+      ahead: 0,
+      behind: 0,
+      changedCount: 0
+    }
     if (!cwd) return empty
     try {
       const git = simpleGit({ baseDir: cwd })
       if (!(await git.checkIsRepo())) return empty
       const branchInfo = await git.branchLocal()
       const hasCommits = branchInfo.all.length > 0 || (await this.headExists(cwd))
+      // status() carries the upstream and the ahead/behind counts; it also
+      // lists untracked files, which is what `commit` (add -A) would stage.
+      const status = await git.status()
       return {
         isRepo: true,
         currentBranch: branchInfo.current,
         branches: branchInfo.all,
-        hasCommits
+        hasCommits,
+        tracking: status.tracking ?? null,
+        ahead: status.ahead,
+        behind: status.behind,
+        changedCount: status.files.length
       }
     } catch {
       return empty
+    }
+  }
+
+  /**
+   * Refresh the remote-tracking refs. `status()` never talks to the network, so
+   * without this the ahead/behind counts are only as fresh as the last fetch.
+   */
+  async fetch(cwd: string): Promise<GitResult> {
+    try {
+      await simpleGit({ baseDir: cwd }).fetch()
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: messageOf(e) }
+    }
+  }
+
+  /** Fetch and integrate the upstream branch. */
+  async pull(cwd: string): Promise<GitResult> {
+    try {
+      await simpleGit({ baseDir: cwd }).pull()
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: messageOf(e) }
+    }
+  }
+
+  /** Push the current branch, setting its upstream on the first push. */
+  async push(cwd: string): Promise<GitResult> {
+    try {
+      const git = simpleGit({ baseDir: cwd })
+      const status = await git.status()
+      if (status.tracking) await git.push()
+      else await git.push(['--set-upstream', 'origin', status.current ?? 'HEAD'])
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: messageOf(e) }
     }
   }
 

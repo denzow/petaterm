@@ -25,6 +25,9 @@ export const IPC = {
   GitDiff: 'git:diff',
   GitLog: 'git:log',
   GitCommit: 'git:commit',
+  GitFetch: 'git:fetch',
+  GitPull: 'git:pull',
+  GitPush: 'git:push',
   GitUndoCommit: 'git:undo-commit',
   GitRevert: 'git:revert',
   HotkeySet: 'hotkey:set'
@@ -105,6 +108,13 @@ export interface GitOverview {
   currentBranch: string
   branches: string[]
   hasCommits: boolean
+  /** Upstream branch (e.g. "origin/main"), null when the branch tracks nothing. */
+  tracking: string | null
+  /** Commits ahead of / behind the upstream; both 0 without one. */
+  ahead: number
+  behind: number
+  /** Files with working-tree changes, untracked ones included. */
+  changedCount: number
 }
 
 export type GitResult = { ok: true } | { ok: false; error: string }

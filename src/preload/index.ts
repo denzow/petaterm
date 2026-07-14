@@ -67,6 +67,9 @@ const api = {
   gitLog: (cwd: string): Promise<GitLogEntry[]> => ipcRenderer.invoke(IPC.GitLog, cwd),
   gitCommit: (cwd: string, message: string): Promise<GitResult> =>
     ipcRenderer.invoke(IPC.GitCommit, cwd, message),
+  gitFetch: (cwd: string): Promise<GitResult> => ipcRenderer.invoke(IPC.GitFetch, cwd),
+  gitPull: (cwd: string): Promise<GitResult> => ipcRenderer.invoke(IPC.GitPull, cwd),
+  gitPush: (cwd: string): Promise<GitResult> => ipcRenderer.invoke(IPC.GitPush, cwd),
   gitUndoCommit: (cwd: string): Promise<GitResult> => ipcRenderer.invoke(IPC.GitUndoCommit, cwd),
   gitRevert: (cwd: string, hash: string): Promise<GitResult> =>
     ipcRenderer.invoke(IPC.GitRevert, cwd, hash),

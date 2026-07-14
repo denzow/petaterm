@@ -284,6 +284,15 @@ function registerIpcHandlers(): void {
   ipcMain.handle(IPC.GitCommit, (_e, cwd: string, message: string): Promise<GitResult> => {
     return gitService.commit(cwd, message)
   })
+  ipcMain.handle(IPC.GitFetch, (_e, cwd: string): Promise<GitResult> => {
+    return gitService.fetch(cwd)
+  })
+  ipcMain.handle(IPC.GitPull, (_e, cwd: string): Promise<GitResult> => {
+    return gitService.pull(cwd)
+  })
+  ipcMain.handle(IPC.GitPush, (_e, cwd: string): Promise<GitResult> => {
+    return gitService.push(cwd)
+  })
   ipcMain.handle(IPC.GitUndoCommit, (_e, cwd: string): Promise<GitResult> => {
     return gitService.undoLastCommit(cwd)
   })

@@ -404,6 +404,41 @@ textarea {
   color: var(--red);
 }
 
+/* ---------- tab search palette (Shift twice) ---------- */
+
+.tab-search-modal {
+  align-self: flex-start;
+  margin-top: 12vh;
+}
+
+.tab-search-current {
+  margin-left: 6px;
+  color: var(--accent);
+  font-size: 10px;
+}
+
+.tab-search-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tab-search-meta .bookmark-path {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.tab-search-process {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
 .sidebar-footer {
   padding: 4px;
   border-top: 1px solid var(--border);
@@ -999,6 +1034,61 @@ textarea {
   flex: 1;
   min-width: 0;
   overflow: auto;
+}
+
+/* ---------- remote box (pull / push) ---------- */
+
+.git-remote-box {
+  margin: 8px 10px 0;
+  border: 1px solid var(--border);
+  padding: 8px;
+}
+
+.git-remote-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.git-remote-upstream {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.git-remote-counts {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+  color: var(--text);
+}
+
+.git-remote-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.git-remote-actions button {
+  flex: 1;
+  padding: 5px 0;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.git-remote-actions button:hover:not(:disabled) {
+  border-color: var(--text-dim);
+}
+
+.git-remote-actions button:disabled {
+  color: var(--text-dim);
+  cursor: default;
 }
 
 /* ---------- commit box ---------- */
