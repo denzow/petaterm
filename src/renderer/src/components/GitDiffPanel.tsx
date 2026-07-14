@@ -7,6 +7,18 @@ interface GitDiffPanelProps {
   tab: Tab
 }
 
+const LIST_WIDTH_KEY = 'petaterm.diffFileListWidth'
+const DEFAULT_LIST_WIDTH = 210
+const MIN_LIST_WIDTH = 120
+const MAX_LIST_WIDTH = 600
+
+function loadListWidth(): number {
+  const raw = Number(localStorage.getItem(LIST_WIDTH_KEY))
+  return Number.isFinite(raw) && raw >= MIN_LIST_WIDTH && raw <= MAX_LIST_WIDTH
+    ? raw
+    : DEFAULT_LIST_WIDTH
+}
+
 export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
   const [overview, setOverview] = useState<GitOverview | null>(null)
   const [diff, setDiff] = useState<GitDiffFile[]>([])
@@ -16,7 +28,9 @@ export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
   const [loading, setLoading] = useState(false)
   // File-list highlight: the file whose diff is at the top of the viewport.
   const [activeFile, setActiveFile] = useState<string | null>(null)
+  const [listWidth, setListWidth] = useState(loadListWidth)
   const diffScrollRef = useRef<HTMLDivElement>(null)
+  const diffAreaRef = useRef<HTMLDivElement>(null)
 
   const refresh = useCallback(async (): Promise<void> => {
     if (!tab.cwd) return
@@ -88,6 +102,36 @@ export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
     if (current) setActiveFile(current)
   }
 
+  // Pointer capture keeps the drag alive once the cursor leaves the thin handle.
+  const onResizeStart = (e: React.PointerEvent<HTMLDivElement>): void => {
+    e.preventDefault()
+    const handle = e.currentTarget
+    try {
+      handle.setPointerCapture(e.pointerId)
+    } catch {
+      // No capturable pointer — the drag still works while the cursor stays on
+      // the handle.
+    }
+    const left = diffAreaRef.current?.getBoundingClientRect().left ?? 0
+    const onMove = (ev: PointerEvent): void =>
+      setListWidth(Math.min(MAX_LIST_WIDTH, Math.max(MIN_LIST_WIDTH, ev.clientX - left)))
+    const onUp = (): void => {
+      handle.removeEventListener('pointermove', onMove)
+      handle.removeEventListener('pointerup', onUp)
+      setListWidth((w) => {
+        localStorage.setItem(LIST_WIDTH_KEY, String(w))
+        return w
+      })
+    }
+    handle.addEventListener('pointermove', onMove)
+    handle.addEventListener('pointerup', onUp)
+  }
+
+  const resetListWidth = (): void => {
+    setListWidth(DEFAULT_LIST_WIDTH)
+    localStorage.setItem(LIST_WIDTH_KEY, String(DEFAULT_LIST_WIDTH))
+  }
+
   // The remembered file may vanish on refresh — fall back to the first one.
   const highlighted = diff.some((f) => f.path === activeFile) ? activeFile : (diff[0]?.path ?? null)
 
@@ -155,12 +199,12 @@ export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
             </div>
           </div>
 
-          <div className="git-diff-area">
+          <div className="git-diff-area" ref={diffAreaRef}>
             {diff.length === 0 ? (
               <div className="git-panel-empty">変更はありません</div>
             ) : (
               <>
-                <div className="diff-file-list">
+                <div className="diff-file-list" style={{ width: listWidth }}>
                   {diff.map((f) => {
                     const add = f.hunks.reduce(
                       (n, h) => n + h.lines.filter((l) => l.type === 'add').length,
@@ -189,6 +233,12 @@ export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
                     )
                   })}
                 </div>
+                <div
+                  className="diff-file-list-resizer"
+                  onPointerDown={onResizeStart}
+                  onDoubleClick={resetListWidth}
+                  title="ドラッグで幅を変更 / ダブルクリックで既定幅に戻す"
+                />
                 <div className="diff-scroll" ref={diffScrollRef} onScroll={onDiffScroll}>
                   <DiffViewer files={diff} onSend={sendToClaude} />
                 </div>

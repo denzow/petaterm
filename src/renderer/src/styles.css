@@ -872,14 +872,26 @@ textarea {
   border-top: 1px solid var(--border);
 }
 
-/* Changed-file list beside the diff; clicking jumps, scrolling follows. */
+/* Changed-file list beside the diff; clicking jumps, scrolling follows.
+   Its width is set inline (drag-resizable, persisted in localStorage). */
 .diff-file-list {
-  width: 210px;
-  max-width: 35%;
   flex-shrink: 0;
   overflow-y: auto;
   border-right: 1px solid var(--border);
   padding: 4px 0;
+}
+
+/* Negative margins let the 6px grab area straddle the list's 1px border. */
+.diff-file-list-resizer {
+  flex: 0 0 6px;
+  margin: 0 -3px;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.diff-file-list-resizer:hover {
+  background: var(--accent);
+  opacity: 0.4;
 }
 
 .diff-file-list-item {
