@@ -83,15 +83,23 @@ export function normalizeKey(key: string): string {
   return key.length === 1 ? key.toUpperCase() : key
 }
 
-export function matchBinding(e: KeyboardEvent, b: KeyBinding): boolean {
+export function matchBinding(e: KeyboardEvent, b: KeyBinding, ignoreAlt = false): boolean {
   return (
     e.ctrlKey === b.ctrl &&
     e.shiftKey === b.shift &&
-    e.altKey === b.alt &&
+    (ignoreAlt || e.altKey === b.alt) &&
     e.metaKey === b.meta &&
     normalizeKey(e.key) === b.key
   )
 }
+
+/**
+ * Actions matched even with an extra Alt held down. Rectangular selection is
+ * Alt+drag (Shift+Alt inside apps that track the mouse), so the hand is still
+ * on Alt when the copy combo follows — without this the keystroke would miss
+ * the binding, reach the shell, and clear the very selection being copied.
+ */
+const ALT_TOLERANT_ACTIONS: ShortcutAction[] = ['copy']
 
 const KEY_SYMBOLS: Record<string, string> = {
   ArrowLeft: '←',
@@ -190,6 +198,10 @@ export const useKeybindingsStore = create<KeybindingsState>((set, get) => ({
     const { bindings } = get()
     for (const action of ACTIONS) {
       if (matchBinding(e, bindings[action])) return action
+    }
+    // Exact matching first, so a stray Alt never shadows an Alt-bound action.
+    for (const action of ALT_TOLERANT_ACTIONS) {
+      if (!bindings[action].alt && matchBinding(e, bindings[action], true)) return action
     }
     return null
   }
