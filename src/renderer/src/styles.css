@@ -520,6 +520,63 @@ textarea {
   padding: 4px;
 }
 
+/* Search bar floating over the top-right of the active terminal. */
+.terminal-search {
+  position: absolute;
+  top: 6px;
+  right: 18px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 35%);
+}
+
+.terminal-search-input {
+  width: 200px;
+  padding: 3px 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.terminal-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.terminal-search-count {
+  min-width: 60px;
+  text-align: right;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.terminal-search-toggle {
+  padding: 2px 5px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.terminal-search-toggle:hover {
+  color: var(--text);
+}
+
+.terminal-search-toggle.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ---------- files panel ---------- */
 
 .files-area {

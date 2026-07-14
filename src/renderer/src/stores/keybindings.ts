@@ -11,6 +11,7 @@ export type ShortcutAction =
   | 'moveTabDown'
   | 'openBookmarks'
   | 'openNotifications'
+  | 'find'
   | 'copy'
   | 'paste'
   | 'globalActivate'
@@ -35,6 +36,7 @@ export const ACTION_LABELS: Record<ShortcutAction, string> = {
   moveTabDown: 'セッションタブを下へ移動',
   openBookmarks: 'ブックマーク一覧',
   openNotifications: '通知一覧',
+  find: 'ターミナル内を検索',
   copy: 'コピー (ターミナル)',
   paste: '貼り付け (ターミナル)',
   globalActivate: 'petaterm を前面に出す / 最小化'
@@ -52,6 +54,7 @@ export const ACTIONS: ShortcutAction[] = [
   'moveTabDown',
   'openBookmarks',
   'openNotifications',
+  'find',
   'copy',
   'paste'
 ]
@@ -72,6 +75,7 @@ const DEFAULT_BINDINGS: Record<ShortcutAction, KeyBinding> = {
   moveTabDown: { ctrl: true, shift: true, alt: false, meta: false, key: 'ArrowDown' },
   openBookmarks: { ctrl: true, shift: true, alt: false, meta: false, key: 'B' },
   openNotifications: { ctrl: true, shift: true, alt: false, meta: false, key: 'N' },
+  find: { ctrl: true, shift: true, alt: false, meta: false, key: 'F' },
   copy: { ctrl: true, shift: true, alt: false, meta: false, key: 'C' },
   paste: { ctrl: true, shift: true, alt: false, meta: false, key: 'V' },
   globalActivate: { ctrl: false, shift: false, alt: false, meta: false, key: 'F12' }

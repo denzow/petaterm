@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { TerminalView } from './components/TerminalView'
+import { TerminalSearch } from './components/TerminalSearch'
 import { FilesPanel } from './components/FilesPanel'
 import { GitDiffPanel } from './components/GitDiffPanel'
 import { GitLogPanel } from './components/GitLogPanel'
@@ -28,6 +29,8 @@ export default function App(): React.JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [bookmarksOpen, setBookmarksOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchFocus, setSearchFocus] = useState(0)
   const [gitInfo, setGitInfo] = useState<{ isRepo: boolean; branch: string }>({
     isRepo: false,
     branch: ''
@@ -170,6 +173,13 @@ export default function App(): React.JSX.Element {
         case 'openNotifications':
           setNotificationsOpen((open) => !open)
           break
+        case 'find':
+          // Searching acts on the terminal, so bring it back into view first.
+          setPanel('terminal')
+          setSearchOpen(true)
+          // Re-pressing the shortcut refocuses the box instead of doing nothing.
+          setSearchFocus((n) => n + 1)
+          break
       }
     }
     const handler = (e: KeyboardEvent): void => {
@@ -269,6 +279,13 @@ export default function App(): React.JSX.Element {
                 active={tab.id === activeTabId && panel === 'terminal'}
               />
             ))}
+            {searchOpen && activeTabId && (
+              <TerminalSearch
+                tabId={activeTabId}
+                focusToken={searchFocus}
+                onClose={() => setSearchOpen(false)}
+              />
+            )}
           </div>
           {panel === 'files' && activeTab && <FilesPanel tab={activeTab} />}
           {panel === 'diff' && activeTab && <GitDiffPanel tab={activeTab} />}

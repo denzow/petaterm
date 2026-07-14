@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { SearchAddon } from '@xterm/addon-search'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
@@ -12,6 +13,13 @@ interface TerminalViewProps {
   tab: Tab
   active: boolean
 }
+
+/**
+ * The live terminal of each tab, so the search bar — which lives outside this
+ * component, over the terminal area — can drive the active tab's xterm.
+ * Entries are added when a tab's terminal is created and removed when it dies.
+ */
+export const terminals = new Map<string, { term: Terminal; search: SearchAddon }>()
 
 /**
  * Hand a clicked link to the OS browser. xterm's default would call
@@ -43,6 +51,9 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
+    const search = new SearchAddon()
+    term.loadAddon(search)
+    terminals.set(tab.id, { term, search })
     // Plain http(s) URLs printed as text — underlined on hover, click to open.
     term.loadAddon(new WebLinksAddon(openLink))
     term.open(container)
@@ -119,6 +130,7 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
       unsubData()
       unsubExit()
       unsubAppearance()
+      terminals.delete(tab.id)
       window.petaterm.ptyDispose(tab.id)
       term.dispose()
     }
