@@ -58,7 +58,16 @@ export function TerminalView({ tab, active }: TerminalViewProps): React.JSX.Elem
     term.loadAddon(new WebLinksAddon(openLink))
     term.open(container)
     try {
-      term.loadAddon(new WebglAddon())
+      const webgl = new WebglAddon()
+      // Chromium caps the number of simultaneous WebGL contexts (~16); opening
+      // more tabs than that makes it force-lose the oldest terminal's context,
+      // leaving it blank. Dispose the addon on loss so xterm falls back to the
+      // DOM renderer and the terminal keeps drawing.
+      webgl.onContextLoss(() => {
+        webgl.dispose()
+        if (container.clientWidth > 0 && container.clientHeight > 0) fit.fit()
+      })
+      term.loadAddon(webgl)
     } catch {
       // WebGL unavailable — fall back to the DOM renderer
     }
