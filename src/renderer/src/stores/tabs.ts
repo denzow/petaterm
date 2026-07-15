@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { TabActivityState } from '../../../shared/ipc'
+import { useDiffCommentsStore } from './diff-comments'
 
 export interface Tab {
   id: string
@@ -102,6 +103,8 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       }
       return { tabs, activeTabId }
     })
+    // Drop any pending diff comments for the gone tab so byTab doesn't leak.
+    useDiffCommentsStore.getState().clear(tabId)
     if (get().tabs.length === 0) get().addTab()
   },
 

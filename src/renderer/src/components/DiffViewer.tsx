@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react'
 import { GitDiffFile, GitDiffHunk, GitDiffLine } from '../../../shared/ipc'
+import { nextCommentId, PendingComment, useDiffCommentsStore } from '../stores/diff-comments'
 
 interface Selection {
   filePath: string
@@ -8,27 +9,16 @@ interface Selection {
   end: number
 }
 
-/**
- * A written-but-not-yet-sent comment. The quoted lines and range label are
- * snapshotted at add time, so the comment stays intact (and sendable) even
- * if the diff is refreshed and the hunk it anchored to moves or disappears.
- */
-interface PendingComment {
-  id: number
-  filePath: string
-  hunkIndex: number
-  anchor: number // line index the comment renders under (= selection end)
-  header: string // "ファイル: path (n〜m行目)"
-  quoted: string
-  comment: string
-}
+// Stable reference for the "no comments yet" case: returning a fresh `[]` from
+// the store selector would make useSyncExternalStore see a new snapshot every
+// render and loop forever ("getSnapshot should be cached").
+const NO_COMMENTS: PendingComment[] = []
 
 interface DiffViewerProps {
+  tabId: string
   files: GitDiffFile[]
   onSend: (text: string) => void
 }
-
-let commentIdCounter = 0
 
 export function statusLetter(status: GitDiffFile['status']): string {
   return status === 'added' ? 'A' : status === 'deleted' ? 'D' : status === 'renamed' ? 'R' : 'M'
@@ -41,10 +31,13 @@ export function statusLetter(status: GitDiffFile['status']): string {
  * a GitHub review) and a sticky submit bar sends them all to the tab's
  * Claude Code session at once.
  */
-export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Element {
+export function DiffViewer({ tabId, files, onSend }: DiffViewerProps): React.JSX.Element {
   const [selection, setSelection] = useState<Selection | null>(null)
   const [comment, setComment] = useState('')
-  const [pending, setPending] = useState<PendingComment[]>([])
+  const pending = useDiffCommentsStore((s) => s.byTab[tabId] ?? NO_COMMENTS)
+  const addPending = useDiffCommentsStore((s) => s.add)
+  const removePending = useDiffCommentsStore((s) => s.remove)
+  const clearPending = useDiffCommentsStore((s) => s.clear)
 
   const handleLineClick = (
     filePath: string,
@@ -85,24 +78,21 @@ export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Elemen
           ? ` (${lineNumbers[0]}行目)`
           : ` (${lineNumbers[0]}〜${lineNumbers[lineNumbers.length - 1]}行目)`
     const quoted = lines.map((l) => `> ${prefixOf(l)}${l.text}`).join('\n')
-    setPending((prev) => [
-      ...prev,
-      {
-        id: ++commentIdCounter,
-        filePath: file.path,
-        hunkIndex: selection.hunkIndex,
-        anchor: selection.end,
-        header: `ファイル: ${file.path}${range}`,
-        quoted,
-        comment: comment.trim()
-      }
-    ])
+    addPending(tabId, {
+      id: nextCommentId(),
+      filePath: file.path,
+      hunkIndex: selection.hunkIndex,
+      anchor: selection.end,
+      header: `ファイル: ${file.path}${range}`,
+      quoted,
+      comment: comment.trim()
+    })
     setSelection(null)
     setComment('')
   }
 
   const removeComment = (id: number): void => {
-    setPending((prev) => prev.filter((p) => p.id !== id))
+    removePending(tabId, id)
   }
 
   const submit = (): void => {
@@ -119,7 +109,7 @@ export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Elemen
         .join('\n')
     )
     onSend(['以下の diff についての指摘です:', '', sections.join('\n\n')].join('\n'))
-    setPending([])
+    clearPending(tabId)
   }
 
   return (
@@ -225,7 +215,7 @@ export function DiffViewer({ files, onSend }: DiffViewerProps): React.JSX.Elemen
       {pending.length > 0 && (
         <div className="diff-submit-bar">
           <span className="diff-submit-count">{pending.length} 件のコメント</span>
-          <button onClick={() => setPending([])}>全てクリア</button>
+          <button onClick={() => clearPending(tabId)}>全てクリア</button>
           <button className="primary" onClick={submit}>
             まとめて Claude に送る
           </button>

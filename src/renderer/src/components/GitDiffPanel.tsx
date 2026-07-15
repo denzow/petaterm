@@ -164,7 +164,7 @@ export function GitDiffPanel({ tab }: GitDiffPanelProps): React.JSX.Element {
                   title="ドラッグで幅を変更 / ダブルクリックで既定幅に戻す"
                 />
                 <div className="diff-scroll" ref={diffScrollRef} onScroll={onDiffScroll}>
-                  <DiffViewer files={diff} onSend={sendToClaude} />
+                  <DiffViewer tabId={tab.id} files={diff} onSend={sendToClaude} />
                 </div>
               </>
             )}
